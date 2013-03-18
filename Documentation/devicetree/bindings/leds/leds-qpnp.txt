@@ -26,12 +26,21 @@ Optional properties for WLED:
 - qcom,num-strings: number of wled strings supported
 - qcom,ovp_val: over voltage protection threshold,
 		follows enum wled_ovp_threshold
+<<<<<<< HEAD
 - qcom,boost_curr_lim: boot currnet limit, follows enum wled_current_bost_limit
 - qcom,ctrl_delay_us: delay in activation of led
 - qcom,dig_mod_gen_en: digital module generator
 - qcom,cs_out_en: current sink output enable
 - qcom,op_fdbck: selection of output as feedback for the boost
 - qcom,cp_select: high pole capacitance
+=======
+- qcom,boost-curr-lim: boot currnet limit, follows enum wled_current_bost_limit
+- qcom,ctrl-delay-us: delay in activation of led
+- qcom,dig-mod-gen-en: digital module generator
+- qcom,cs-out-en: current sink output enable
+- qcom,op-fdbck: selection of output as feedback for the boost, 00 = automatic selection, 01 = select LED1 output, 02 = select LED2 output, 03 = select LED3 output
+- qcom,cp-select: high pole capacitance
+>>>>>>> 29f8c28... leds: leds-qpnp: correct wled op_fdbck data type
 - linux,default-trigger: trigger the led from external modules such as display
 - qcom,default-state:  default state of the led, should be "on" or "off"
 
@@ -138,7 +147,7 @@ Example:
 				linux,default-trigger = "bkl-trigger"
 				label = "wled";
 				qcom,cs-out-en;
-				qcom,op-fdbck;
+				qcom,op-fdbck = <1>;
 				qcom,default-state "off";
 				qcom,max-current = <25>;
 				qcom,ctrl-delay-us = <0>;
