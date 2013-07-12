@@ -215,6 +215,7 @@
 	};
 };
 
+<<<<<<< HEAD
 &spmi_bus {
 	qcom,pm8941@1 {
 		qcom,leds@d800 {
@@ -235,6 +236,26 @@
 				qcom,num-strings = <1>;
 				qcom,id = <0>;
 			};
+=======
+&pm8941_lsid1 {
+	qcom,leds@d800 {
+		status = "okay";
+		qcom,wled_0 {
+			label = "wled";
+			linux,name = "wled:backlight";
+			linux,default-trigger = "bkl-trigger";
+			qcom,cs-out-en;
+			qcom,op-fdbck = <1>;
+			qcom,default-state = "on";
+			qcom,max-current = <25>;
+			qcom,ctrl-delay-us = <0>;
+			qcom,boost-curr-lim = <3>;
+			qcom,cp-sel = <0>;
+			qcom,switch-freq = <11>;
+			qcom,ovp-val = <2>;
+			qcom,num-strings = <1>;
+			qcom,id = <0>;
+>>>>>>> e6bfbba... leds: leds-qpnp: Correct switch frequency settings
 		};
 
 		qcom,leds@d900 {
