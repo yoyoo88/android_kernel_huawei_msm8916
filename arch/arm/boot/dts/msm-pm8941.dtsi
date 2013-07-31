@@ -1116,5 +1116,482 @@
 			reg-names = "qpnp-lpg-channel-base", "qpnp-lpg-lut-base";
 			qcom,channel-id = <7>;
 		};
+<<<<<<< HEAD
+=======
+		qcom,freq@1600 {
+			reg = <0x1600 0x100>;
+		};
+	};
+
+	regulator@1700 {
+		regulator-name = "8941_s2";
+		spmi-dev-container;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "qcom,qpnp-regulator";
+		reg = <0x1700 0x300>;
+		status = "disabled";
+
+		qcom,ctl@1700 {
+			reg = <0x1700 0x100>;
+		};
+		qcom,ps@1800 {
+			reg = <0x1800 0x100>;
+		};
+		qcom,freq@1900 {
+			reg = <0x1900 0x100>;
+		};
+	};
+
+	regulator@1a00 {
+		regulator-name = "8941_s3";
+		spmi-dev-container;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "qcom,qpnp-regulator";
+		reg = <0x1a00 0x300>;
+		status = "disabled";
+
+		qcom,ctl@1a00 {
+			reg = <0x1a00 0x100>;
+		};
+		qcom,ps@1b00 {
+			reg = <0x1b00 0x100>;
+		};
+		qcom,freq@1c00 {
+			reg = <0x1c00 0x100>;
+		};
+	};
+
+	regulator@a000 {
+		regulator-name = "8941_boost";
+		reg = <0xa000 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@4000 {
+		regulator-name = "8941_l1";
+		reg = <0x4000 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@4100 {
+		regulator-name = "8941_l2";
+		reg = <0x4100 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@4200 {
+		regulator-name = "8941_l3";
+		reg = <0x4200 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@4300 {
+		regulator-name = "8941_l4";
+		reg = <0x4300 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@4400 {
+		regulator-name = "8941_l5";
+		reg = <0x4400 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		qcom,force-type = <0x04 0x10>;
+		status = "disabled";
+	};
+
+	regulator@4500 {
+		regulator-name = "8941_l6";
+		reg = <0x4500 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@4600 {
+		regulator-name = "8941_l7";
+		reg = <0x4600 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		qcom,force-type = <0x04 0x10>;
+		status = "disabled";
+	};
+
+	regulator@4700 {
+		regulator-name = "8941_l8";
+		reg = <0x4700 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@4800 {
+		regulator-name = "8941_l9";
+		reg = <0x4800 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@4900 {
+		regulator-name = "8941_l10";
+		reg = <0x4900 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@4a00 {
+		regulator-name = "8941_l11";
+		reg = <0x4a00 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@4b00 {
+		regulator-name = "8941_l12";
+		reg = <0x4b00 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@4c00 {
+		regulator-name = "8941_l13";
+		reg = <0x4c00 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@4d00 {
+		regulator-name = "8941_l14";
+		reg = <0x4d00 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@4e00 {
+		regulator-name = "8941_l15";
+		reg = <0x4e00 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@4f00 {
+		regulator-name = "8941_l16";
+		reg = <0x4f00 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@5000 {
+		regulator-name = "8941_l17";
+		reg = <0x5000 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@5100 {
+		regulator-name = "8941_l18";
+		reg = <0x5100 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@5200 {
+		regulator-name = "8941_l19";
+		reg = <0x5200 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@5300 {
+		regulator-name = "8941_l20";
+		reg = <0x5300 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@5400 {
+		regulator-name = "8941_l21";
+		reg = <0x5400 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@5500 {
+		regulator-name = "8941_l22";
+		reg = <0x5500 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@5600 {
+		regulator-name = "8941_l23";
+		reg = <0x5600 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@5700 {
+		regulator-name = "8941_l24";
+		reg = <0x5700 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@8000 {
+		regulator-name = "8941_lvs1";
+		reg = <0x8000 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@8100 {
+		regulator-name = "8941_lvs2";
+		reg = <0x8100 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@8200 {
+		regulator-name = "8941_lvs3";
+		reg = <0x8200 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@8300 {
+		regulator-name = "8941_mvs1";
+		reg = <0x8300 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	regulator@8400 {
+		regulator-name = "8941_mvs2";
+		reg = <0x8400 0x100>;
+		compatible = "qcom,qpnp-regulator";
+		status = "disabled";
+	};
+
+	qcom,vibrator@c000 {
+		compatible = "qcom,qpnp-vibrator";
+		reg = <0xc000 0x100>;
+		label = "vibrator";
+		status = "disabled";
+	};
+
+	qcom,leds@d000 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xd000 0x100>;
+		label = "rgb";
+	};
+
+	qcom,leds@d100 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xd100 0x100>;
+		label = "rgb";
+	};
+
+	qcom,leds@d200 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xd200 0x100>;
+		label = "rgb";
+	};
+
+	qcom,leds@d300 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xd300 0x100>;
+		label = "flash";
+		flash-boost-supply = <&pm8941_chg_boost>;
+		torch-boost-supply = <&pm8941_boost>;
+	};
+
+	qcom,leds@d400 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xd400 0x100>;
+		label = "flash";
+	};
+
+	qcom,leds@d500 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xd500 0x100>;
+		label = "flash";
+	};
+
+	qcom,leds@d600 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xd600 0x100>;
+		label = "flash";
+	};
+
+	qcom,leds@d700 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xd700 0x100>;
+		label = "flash";
+	};
+
+	qcom,leds@d800 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xd800 0x100>;
+		label = "wled";
+	};
+
+	qcom,leds@d900 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xd900 0x100>;
+		label = "wled";
+	};
+
+	qcom,leds@da00 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xda00 0x100>;
+		label = "wled";
+	};
+
+	qcom,leds@db00 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xdb00 0x100>;
+		label = "wled";
+	};
+
+	qcom,leds@dc00 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xdc00 0x100>;
+		label = "wled";
+	};
+
+	qcom,leds@dd00 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xdd00 0x100>;
+		label = "wled";
+	};
+
+	qcom,leds@de00 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xde00 0x100>;
+		label = "wled";
+	};
+
+	qcom,leds@df00 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xdf00 0x100>;
+		label = "wled";
+	};
+
+	qcom,leds@e000 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xe000 0x100>;
+		label = "wled";
+	};
+
+	qcom,leds@e100 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xe100 0x100>;
+		label = "wled";
+	};
+
+	qcom,leds@e200 {
+		compatible = "qcom,leds-qpnp";
+		reg = <0xe200 0x100>;
+		label = "kpdbl";
+	};
+
+	pwm@b100 {
+		compatible = "qcom,qpnp-pwm";
+		reg = <0xb100 0x100>,
+		      <0xb042 0x7e>;
+		reg-names = "qpnp-lpg-channel-base", "qpnp-lpg-lut-base";
+		qcom,channel-id = <0>;
+	};
+
+	pwm@b200 {
+		compatible = "qcom,qpnp-pwm";
+		reg = <0xb200 0x100>,
+		      <0xb042 0x7e>;
+		reg-names = "qpnp-lpg-channel-base", "qpnp-lpg-lut-base";
+		qcom,channel-id = <1>;
+	};
+
+	pwm@b300 {
+		compatible = "qcom,qpnp-pwm";
+		reg = <0xb300 0x100>,
+		      <0xb042 0x7e>;
+		reg-names = "qpnp-lpg-channel-base", "qpnp-lpg-lut-base";
+		qcom,channel-id = <2>;
+	};
+
+	pwm@b400 {
+		compatible = "qcom,qpnp-pwm";
+		reg = <0xb400 0x100>,
+		      <0xb042 0x7e>;
+		reg-names = "qpnp-lpg-channel-base", "qpnp-lpg-lut-base";
+		qcom,channel-id = <3>;
+	};
+
+	pwm@b500 {
+		compatible = "qcom,qpnp-pwm";
+		reg = <0xb500 0x100>,
+		      <0xb042 0x7e>;
+		reg-names = "qpnp-lpg-channel-base", "qpnp-lpg-lut-base";
+		qcom,channel-id = <4>;
+	};
+
+	pwm@b600 {
+		compatible = "qcom,qpnp-pwm";
+		reg = <0xb600 0x100>,
+		      <0xb042 0x7e>;
+		reg-names = "qpnp-lpg-channel-base", "qpnp-lpg-lut-base";
+		qcom,channel-id = <5>;
+	};
+
+	pwm@b700 {
+		compatible = "qcom,qpnp-pwm";
+		reg = <0xb700 0x100>,
+		      <0xb042 0x7e>;
+		reg-names = "qpnp-lpg-channel-base", "qpnp-lpg-lut-base";
+		qcom,channel-id = <6>;
+	};
+
+	pwm@b800 {
+		compatible = "qcom,qpnp-pwm";
+		reg = <0xb800 0x100>,
+		      <0xb042 0x7e>;
+		reg-names = "qpnp-lpg-channel-base", "qpnp-lpg-lut-base";
+		qcom,channel-id = <7>;
+	};
+
+	pwm@e400 {
+		compatible = "qcom,qpnp-pwm";
+		reg = <0xe400 0x100>,
+		      <0xe342 0x1e>;
+		reg-names = "qpnp-lpg-channel-base", "qpnp-lpg-lut-base";
+		qcom,channel-id = <8>;
+	};
+
+	pwm@e500 {
+		compatible = "qcom,qpnp-pwm";
+		reg = <0xe500 0x100>,
+		      <0xe342 0x1e>;
+		reg-names = "qpnp-lpg-channel-base", "qpnp-lpg-lut-base";
+		qcom,channel-id = <9>;
+	};
+
+	pwm@e600 {
+		compatible = "qcom,qpnp-pwm";
+		reg = <0xe600 0x100>,
+		      <0xe342 0x1e>;
+		reg-names = "qpnp-lpg-channel-base", "qpnp-lpg-lut-base";
+		qcom,channel-id = <10>;
+	};
+
+	pwm@e700 {
+		compatible = "qcom,qpnp-pwm";
+		reg = <0xe700 0x100>,
+		      <0xe342 0x1e>;
+		reg-names = "qpnp-lpg-channel-base", "qpnp-lpg-lut-base";
+		qcom,channel-id = <11>;
+>>>>>>> 37c7cd3... leds: leds-qpnp: Enable flash torch mode on single LED PMIC
 	};
 };
