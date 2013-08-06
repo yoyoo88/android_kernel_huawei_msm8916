@@ -247,6 +247,7 @@ void mdss_edp_set_backlight(struct mdss_panel_data *pdata, u32 bl_level)
 	}
 }
 
+<<<<<<< HEAD
 int mdss_edp_mainlink_ready(struct mdss_edp_drv_pdata *ep, u32 which)
 {
 	u32 data;
@@ -263,6 +264,19 @@ int mdss_edp_mainlink_ready(struct mdss_edp_drv_pdata *ep, u32 which)
 	pr_err("%s: which=%x NOT ready\n", __func__, which);
 
 	return 0;
+=======
+	if (edp_drv->is_pwm_enabled) {
+		pwm_disable(edp_drv->bl_pwm);
+		edp_drv->is_pwm_enabled = 0;
+	}
+
+	ret = pwm_enable(edp_drv->bl_pwm);
+	if (ret) {
+		pr_err("%s: pwm_enable() failed err=%d\n", __func__, ret);
+		return;
+	}
+	edp_drv->is_pwm_enabled = 1;
+>>>>>>> ff84eac... pwm: Update pwm enable sequence in all PWM client drivers
 }
 
 void mdss_edp_mainlink_reset(struct mdss_edp_drv_pdata *ep)
@@ -626,6 +640,7 @@ int mdss_edp_off(struct mdss_panel_data *pdata)
 	mdss_edp_irq_disable(edp_drv);
 
 	gpio_set_value(edp_drv->gpio_panel_en, 0);
+<<<<<<< HEAD
 	if (edp_drv->bl_pwm != NULL)
 		pwm_disable(edp_drv->bl_pwm);
 	edp_drv->is_pwm_enabled = 0;
@@ -635,6 +650,13 @@ int mdss_edp_off(struct mdss_panel_data *pdata)
 
 	mdss_edp_lane_power_ctrl(edp_drv, 0);
 	mdss_edp_phy_power_ctrl(edp_drv, 0);
+=======
+	pwm_disable(edp_drv->bl_pwm);
+	edp_drv->is_pwm_enabled = 0;
+	mdss_edp_enable(edp_drv->base, 0);
+	mdss_edp_unconfig_clk(edp_drv->base, edp_drv->mmss_cc_base);
+	mdss_edp_enable_mainlink(edp_drv->base, 0);
+>>>>>>> ff84eac... pwm: Update pwm enable sequence in all PWM client drivers
 
 	mdss_edp_clk_disable(edp_drv);
 	mdss_edp_unprepare_clocks(edp_drv);
