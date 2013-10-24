@@ -10,13 +10,13 @@ Each LED module is represented as a node of "leds-qpnp". This
 node will further contain the type of LED supported and its
 properties.  At least one child node is required for each LED
 module.  Each must have the required properties below, in addition
-to the properties for the LED type, WLED, Flash or RGB.
+to the properties for the LED type, WLED, Flash, RGB and MPP.
 
 Required properties for each child node, WLED, Flash and RGB:
 - compatible		: should be "qcom,leds-qpnp"
 - qcom,id		: must be one of values supported in enum qpnp_led
 - label			: type of led that will be used, ie "wled"
-- qcom,max-current	: maximum current that the LED can sustain
+- qcom,max-current	: maximum current that the LED can sustain in mA
 - linux,name		: name of the led that is used in led framework
 
 WLED is primarily used as display backlight. Display subsystem uses
@@ -24,33 +24,24 @@ LED triggers for WLED to control the brightness as needed.
 
 Optional properties for WLED:
 - qcom,num-strings: number of wled strings supported
-- qcom,ovp_val: over voltage protection threshold,
+- qcom,ovp-val: over voltage protection threshold,
 		follows enum wled_ovp_threshold
-<<<<<<< HEAD
-- qcom,boost_curr_lim: boot currnet limit, follows enum wled_current_bost_limit
-- qcom,ctrl_delay_us: delay in activation of led
-- qcom,dig_mod_gen_en: digital module generator
-- qcom,cs_out_en: current sink output enable
-- qcom,op_fdbck: selection of output as feedback for the boost
-- qcom,cp_select: high pole capacitance
-=======
 - qcom,boost-curr-lim: boot currnet limit, follows enum wled_current_bost_limit
 - qcom,ctrl-delay-us: delay in activation of led
 - qcom,dig-mod-gen-en: digital module generator
 - qcom,cs-out-en: current sink output enable
 - qcom,op-fdbck: selection of output as feedback for the boost, 00 = automatic selection, 01 = select LED1 output, 02 = select LED2 output, 03 = select LED3 output
 - qcom,cp-select: high pole capacitance
->>>>>>> 29f8c28... leds: leds-qpnp: correct wled op_fdbck data type
 - linux,default-trigger: trigger the led from external modules such as display
 - qcom,default-state:  default state of the led, should be "on" or "off"
 
 Flash is used primarily as a camera or video flash.
 
 Optional properties for flash:
-- qcom,headroom: headroom to use, mV
+- qcom,headroom: headroom to use. Values should be 0, 1, 2, 3 for 250mV, 300mV, 400mV and 500mV
 - qcom,duration: duration of the flash and torch, 10ms - 1280ms for flash and 2s - 33s for torch
 - qcom,clamp-curr: current to clamp at, mA
-- qcom,startup-dly: delay before flashing after flash executed, us
+- qcom,startup-dly: delay before flashing after flash executed. Values should 0, 1, 2, 3 for 10us, 32us, 64us, and 128us
 - qcom,saftey-timer: include for safety timer use, otherwise watchdog timer will be used
 - linux,default-trigger: trigger the led from external modules such as display
 - qcom,default-state:  default state of the led, should be "on" or "off"
@@ -94,6 +85,10 @@ Optional properties for MPP LED:
 - qcom,vin-ctrl: select input source, supported values are 0 to 3
 - qcom,use-blink: Use blink sysfs entry for switching into lpg mode.  For optimal use, set default mode to pwm.  All required lpg parameters must be supplied.
 - qcom,min-brightness - Lowest possible brightness supported on this LED other than 0.
+- qcom,current-setting: default current value for wled used as button backlight in mA
+- mpp-power-supply: regulator support for MPP LED
+- qcom,mpp-power-max-voltage - maximum voltage for MPP LED regulator. This should not be specified when no regulator is in use.
+- qcom,mpp-power-min-voltage - minimum voltage for MPP LED regulator. This should not be specified when no regulator is in use.
 
 Required properties for PWM mode only:
 - qcom,pwm-channel: pwm channel the led will operate on
@@ -139,6 +134,22 @@ Optional properties for LPG mode only:
 - qcom,lut-flags: flags to be used in lut configuration
 
 Example:
+
+	qcom,leds@a100 {
+		status = "okay";
+		qcom,led_mpp_2 {
+			label = "mpp";
+			linux,name = "button-backlight";
+			linux,default-trigger = "hr-trigger";
+			qcom,default-state = "off";
+			qcom,current-setting = <20>;
+			qcom,max-current = <40>;
+			qcom,id = <6>;
+			qcom,source-sel = <1>;
+			qcom,mode-ctrl = <0x61>;
+			qcom,mode = "manual";
+		};
+	};
 
 	qcom,leds@a200 {
 		status = "okay";
