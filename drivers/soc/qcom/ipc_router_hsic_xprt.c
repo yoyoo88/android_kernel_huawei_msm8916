@@ -296,7 +296,6 @@ static void hsic_xprt_read_data(struct work_struct *work)
 {
 	int pkt_size;
 	struct sk_buff *skb = NULL;
-	void *data;
 	struct ipc_bridge_platform_data *pdata;
 	struct delayed_work *rwork = to_delayed_work(work);
 	struct msm_ipc_router_hsic_xprt *hsic_xprtp =
@@ -327,8 +326,7 @@ static void hsic_xprt_read_data(struct work_struct *work)
 			IPC_RTR_ERR("%s: Couldn't alloc SKB\n", __func__);
 			msleep(100);
 		}
-		data = skb_put(skb, pdata->max_read_size);
-		pkt_size = pdata->read(hsic_xprtp->pdev, data,
+		pkt_size = pdata->read(hsic_xprtp->pdev, skb->data,
 					pdata->max_read_size);
 		if (pkt_size < 0) {
 			IPC_RTR_ERR("%s: Error %d @ read operation\n",
@@ -338,6 +336,7 @@ static void hsic_xprt_read_data(struct work_struct *work)
 			kfree(hsic_xprtp->in_pkt);
 			break;
 		}
+		skb_put(skb, pkt_size);
 		skb_queue_tail(hsic_xprtp->in_pkt->pkt_fragment_q, skb);
 		hsic_xprtp->in_pkt->length = pkt_size;
 		D("%s: Packet size read %d\n", __func__, pkt_size);
