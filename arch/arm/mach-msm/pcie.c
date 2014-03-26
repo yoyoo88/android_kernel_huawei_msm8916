@@ -57,6 +57,7 @@
 #define PCIE20_PARF_PHY_REFCLK         0x4C
 #define PCIE20_PARF_CONFIG_BITS        0x50
 #define PCIE20_PARF_DBI_BASE_ADDR      0x168
+#define PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT   0x178
 
 #define PCIE20_ELBI_VERSION            0x00
 #define PCIE20_ELBI_SYS_CTRL           0x04
@@ -1140,6 +1141,12 @@ int msm_pcie_enable(struct msm_pcie_dev_t *dev, u32 options)
 
 	writel_relaxed(0x3656, dev->parf + PCIE20_PARF_SYS_CTRL);
 
+	if (dev->use_msi) {
+		PCIE_DBG(dev, "RC%d: enable WR halt.\n", dev->rc_idx);
+		msm_pcie_write_mask(dev->parf +
+			PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT, 0, BIT(31));
+	}
+
 	/* init PCIe PHY */
 	pcie_phy_init(dev);
 
@@ -1588,6 +1595,7 @@ static int msm_pcie_probe(struct platform_device *pdev)
 	msm_pcie_dev[rc_idx].wake_counter = 0;
 	msm_pcie_dev[rc_idx].req_exit_l1_counter = 0;
 	msm_pcie_dev[rc_idx].power_on = false;
+	msm_pcie_dev[rc_idx].use_msi = false;
 	memcpy(msm_pcie_dev[rc_idx].vreg, msm_pcie_vreg_info,
 				sizeof(msm_pcie_vreg_info));
 	memcpy(msm_pcie_dev[rc_idx].gpio, msm_pcie_gpio_info,
