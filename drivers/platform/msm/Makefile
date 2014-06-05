@@ -24,3 +24,4 @@ obj-$(CONFIG_PFT) += pft.o
 obj-$(CONFIG_QCA1530) += qca1530.o
 obj-$(CONFIG_KLM) += msm_klmd.o
 obj-$(CONFIG_MSM_SPSS) += spss.o
+obj-$(CONFIG_QMP_CORE) += qmp_core/

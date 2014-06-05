@@ -72,6 +72,12 @@ config QPNP_VIBRATOR
 	  VIB_DRV_N line and can be controlled manually or by the DTEST lines.
 	  It uses the android timed-output framework.
 
+config QMP_CORE
+	tristate "QMP Core"
+	help
+		This option enables Qualcomm Malware Protection Sphinx component
+		to log on-device software API activity.
+
 config QPNP_REVID
 	tristate "QPNP Revision ID Peripheral"
 	depends on SPMI
