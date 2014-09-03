@@ -213,6 +213,8 @@ static int msm_vfe44_init_hardware(struct vfe_device *vfe_dev)
 	}
 	return rc;
 irq_req_failed:
+	iounmap(vfe_dev->vfe_avtimer_base);
+avtimer_remap_failed:
 	iounmap(vfe_dev->vfe_vbif_base);
 vbif_remap_failed:
 	iounmap(vfe_dev->vfe_base);
