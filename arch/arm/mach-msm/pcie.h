@@ -204,6 +204,7 @@ struct msm_pcie_dev_t {
 	struct mutex                 linkdown_lock;
 	ulong                        linkdown_counter;
 	ulong                        wake_counter;
+	ulong                        req_exit_l1_counter;
 	u32			     ep_shadow[PCIE_CONF_SPACE_DW];
 	u32                          rc_shadow[PCIE_CONF_SPACE_DW];
 	bool                         shadow_en;

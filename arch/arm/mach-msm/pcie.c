@@ -49,6 +49,7 @@
 #endif
 
 #define PCIE20_PARF_SYS_CTRL           0x00
+#define PCIE20_PARF_PM_CTRL            0x20
 #define PCIE20_PARF_PM_STTS            0x24
 #define PCIE20_PARF_PCS_DEEMPH         0x34
 #define PCIE20_PARF_PCS_SWING          0x38
@@ -98,6 +99,7 @@
 #define LINK_UP_CHECK_MAX_COUNT               1
 #define PHY_STABILIZATION_DELAY_US_MIN        995
 #define PHY_STABILIZATION_DELAY_US_MAX        1005
+#define REQ_EXIT_L1_DELAY_US                  1
 
 #define PHY_READY_TIMEOUT_COUNT               10
 #define XMLH_LINK_UP                          0x400
@@ -1548,6 +1550,7 @@ static int msm_pcie_probe(struct platform_device *pdev)
 	msm_pcie_dev[rc_idx].recovery_pending = false;
 	msm_pcie_dev[rc_idx].linkdown_counter = 0;
 	msm_pcie_dev[rc_idx].wake_counter = 0;
+	msm_pcie_dev[rc_idx].req_exit_l1_counter = 0;
 	msm_pcie_dev[rc_idx].power_on = false;
 	memcpy(msm_pcie_dev[rc_idx].vreg, msm_pcie_vreg_info,
 				sizeof(msm_pcie_vreg_info));
@@ -1936,6 +1939,16 @@ int msm_pcie_pm_control(enum msm_pcie_pm_opt pm_opt, u32 busnr, void *user,
 				rc_idx);
 		else
 			msm_pcie_dev[rc_idx].user_suspend = false;
+		break;
+	case MSM_PCIE_REQ_EXIT_L1:
+		msm_pcie_dev[rc_idx].req_exit_l1_counter++;
+		msm_pcie_write_mask(msm_pcie_dev[rc_idx].parf
+					+ PCIE20_PARF_PM_CTRL,
+					0, BIT(1));
+		udelay(REQ_EXIT_L1_DELAY_US);
+		msm_pcie_write_mask(msm_pcie_dev[rc_idx].parf
+					+ PCIE20_PARF_PM_CTRL,
+					BIT(1), 0);
 		break;
 	default:
 		pr_err("PCIe: RC%d: unsupported pm operation:%d.\n",
