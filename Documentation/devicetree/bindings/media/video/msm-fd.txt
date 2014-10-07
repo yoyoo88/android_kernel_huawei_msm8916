@@ -25,6 +25,8 @@ Required properties:
     - macro containing clock's name in hardware.
 - clock-names: should specify relevant names to each clocks
   property defined.
+  If we want to have different operating clock frequencies we can define
+  rate levels. They should be defined in incremental order.
 
 Optional properties:
 
@@ -48,5 +50,7 @@ Example:
                  <&clock_mmss clk_fd_core_uar_clk>;
         clock-names = "fd_core_clk", "fd_core_uar_clk",
                       "fd_axi_clk", "fd_ahb_clk";
-        clock-rates = <400 400 334 80 240>;
+        clock-rates = <60000000 60000000 75000000 40000000>,
+			<200000000 200000000 150000000 40000000>,
+			<400000000 400000000 333000000 80000000>;
     };
