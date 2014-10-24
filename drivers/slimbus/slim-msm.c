@@ -951,6 +951,7 @@ static void msm_slim_remove_ep(struct msm_slim_ctrl *dev,
 
 void msm_slim_sps_exit(struct msm_slim_ctrl *dev, bool dereg)
 {
+
 	if (dev->use_rx_msgqs >= MSM_MSGQ_ENABLED)
 		msm_slim_remove_ep(dev, &dev->rx_msgq, &dev->use_rx_msgqs);
 	if (dev->use_tx_msgqs >= MSM_MSGQ_ENABLED)
@@ -959,8 +960,7 @@ void msm_slim_sps_exit(struct msm_slim_ctrl *dev, bool dereg)
 		int i;
 		for (i = dev->port_b; i < MSM_SLIM_NPORTS; i++) {
 			if (dev->pipes[i - dev->port_b].connected)
-				msm_dealloc_port(&dev->ctrl,
-						i - dev->port_b);
+			msm_slim_disconn_pipe_port(dev, i - dev->port_b);
 		}
 		sps_deregister_bam_device(dev->bam.hdl);
 		dev->bam.hdl = 0L;
