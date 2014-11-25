@@ -338,9 +338,11 @@ static int enter_state(suspend_state_t state)
 	suspend_sys_sync_queue();
 	printk("put it done.\n");
 #else
+#ifdef CONFIG_PM_SYNC_BEFORE_SUSPEND
 	printk(KERN_INFO "PM: Syncing filesystems ... ");
 	sys_sync();
 	printk("done.\n");
+#endif
 #endif
 	pr_debug("PM: Preparing system for %s sleep\n", pm_states[state].label);
 	error = suspend_prepare(state);
