@@ -325,7 +325,7 @@ static int map_buffer(struct task_struct *task, void *wsm_buffer,
 	void		*virt_addr_page;
 	struct page	*page;
 	struct mmutable	*mmutable;
-	struct page	**mmutable_as_array_of_pointers_to_page;
+	struct page	**mmutable_as_array_of_pointers_to_page = NULL;
 	/* page offset in wsm buffer */
 	unsigned int offset;
 
@@ -362,12 +362,21 @@ static int map_buffer(struct task_struct *task, void *wsm_buffer,
 	}
 
 	mmutable = table->virt;
+#if (defined LPAE_SUPPORT) || !(defined CONFIG_ARM64)
 	/*
 	 * We use the memory for the MMU table to hold the pointer
 	 * and convert them later. This works, as everything comes
 	 * down to a 32 bit value.
 	 */
 	mmutable_as_array_of_pointers_to_page = (struct page **)mmutable;
+#else
+	mmutable_as_array_of_pointers_to_page = kmalloc(
+		sizeof(struct page *)*nr_of_pages, GFP_KERNEL | __GFP_ZERO);
+	if (mmutable_as_array_of_pointers_to_page == NULL) {
+		ret = -ENOMEM;
+		goto map_buffer_end;
+	}
+#endif
 
 	/* Request comes from user space */
 	if (task != NULL && !is_vmalloc_addr(wsm_buffer)) {
@@ -385,7 +394,7 @@ static int map_buffer(struct task_struct *task, void *wsm_buffer,
 				 mmutable_as_array_of_pointers_to_page);
 		if (ret != 0) {
 			MCDRV_DBG_ERROR(mcd, "lock_user_pages() failed");
-			return ret;
+			goto map_buffer_end;
 		}
 	}
 	/* Request comes from kernel space(cont buffer) */
@@ -508,6 +517,10 @@ static int map_buffer(struct task_struct *task, void *wsm_buffer,
 		}
 	} while (i-- != 0);
 
+map_buffer_end:
+#if !(defined LPAE_SUPPORT) && (defined CONFIG_ARM64)
+	kfree(mmutable_as_array_of_pointers_to_page);
+#endif
 	return ret;
 }
 
