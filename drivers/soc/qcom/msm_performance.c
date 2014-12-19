@@ -46,6 +46,9 @@ static DEFINE_PER_CPU(struct cpu_status, cpu_stats);
 
 static unsigned int num_online_managed(struct cpumask *mask);
 static int init_cluster_control(void);
+static int rm_high_pwr_cost_cpus(struct cpu_hp *cl);
+
+static DEFINE_PER_CPU(unsigned int, cpu_power_cost);
 
 static int set_num_clusters(const char *buf, const struct kernel_param *kp)
 {
@@ -89,7 +92,7 @@ static int set_max_cpus(const char *buf, const struct kernel_param *kp)
 	while ((cp = strpbrk(cp + 1, ":")))
 		ntokens++;
 
-	if (!ntokens)
+	if (ntokens != (num_clusters - 1))
 		return -EINVAL;
 
 	cp = buf;
@@ -133,9 +136,7 @@ static const struct kernel_param_ops param_ops_max_cpus = {
 	.get = get_max_cpus,
 };
 
-#ifdef CONFIG_MSM_PERFORMANCE_HOTPLUG_ON
 device_param_cb(max_cpus, &param_ops_max_cpus, NULL, 0644);
-#endif
 
 static int set_managed_cpus(const char *buf, const struct kernel_param *kp)
 {
@@ -218,11 +219,9 @@ static int get_managed_online_cpus(char *buf, const struct kernel_param *kp)
 static const struct kernel_param_ops param_ops_managed_online_cpus = {
 	.get = get_managed_online_cpus,
 };
-
-#ifdef CONFIG_MSM_PERFORMANCE_HOTPLUG_ON
 device_param_cb(managed_online_cpus, &param_ops_managed_online_cpus,
-							NULL, 0444);
-#endif
+								NULL, 0444);
+
 /*
  * Userspace sends cpu#:min_freq_value to vote for min_freq_value as the new
  * scaling_min. To withdraw its vote it needs to enter cpu#:0
@@ -249,7 +248,7 @@ static int set_cpu_min_freq(const char *buf, const struct kernel_param *kp)
 	for (i = 0; i < ntokens; i += 2) {
 		if (sscanf(cp, "%u:%u", &cpu, &val) != 2)
 			return -EINVAL;
-		if (cpu > (num_present_cpus() - 1))
+		if (cpu > num_present_cpus())
 			return -EINVAL;
 
 		i_cpu_stats = &per_cpu(cpu_stats, cpu);
@@ -332,7 +331,7 @@ static int set_cpu_max_freq(const char *buf, const struct kernel_param *kp)
 	for (i = 0; i < ntokens; i += 2) {
 		if (sscanf(cp, "%u:%u", &cpu, &val) != 2)
 			return -EINVAL;
-		if (cpu > (num_present_cpus() - 1))
+		if (cpu > num_present_cpus())
 			return -EINVAL;
 
 		i_cpu_stats = &per_cpu(cpu_stats, cpu);
@@ -420,6 +419,77 @@ static struct notifier_block perf_cpufreq_nb = {
 };
 
 /*
+ * Attempt to offline CPUs based on their power cost.
+ * CPUs with higher power costs are offlined first.
+ */
+static int __ref rm_high_pwr_cost_cpus(struct cpu_hp *cl)
+{
+	unsigned int cpu, i;
+	struct cpu_pwr_stats *per_cpu_info = get_cpu_pwr_stats();
+	struct cpu_pstate_pwr *costs;
+	unsigned int *pcpu_pwr;
+	unsigned int max_cost_cpu, max_cost;
+	int any_cpu = -1;
+
+	if (!per_cpu_info)
+		return -ENOSYS;
+
+	for_each_cpu(cpu, cl->cpus) {
+		costs = per_cpu_info[cpu].ptable;
+		if (!costs || !costs[0].freq)
+			continue;
+
+		i = 1;
+		while (costs[i].freq)
+			i++;
+
+		pcpu_pwr = &per_cpu(cpu_power_cost, cpu);
+		*pcpu_pwr = costs[i - 1].power;
+		any_cpu = (int)cpu;
+		pr_debug("msm_perf: CPU:%d Power:%u\n", cpu, *pcpu_pwr);
+	}
+
+	if (any_cpu < 0)
+		return -EAGAIN;
+
+	for (i = 0; i < cpumask_weight(cl->cpus); i++) {
+		max_cost = 0;
+		max_cost_cpu = cpumask_first(cl->cpus);
+
+		for_each_cpu(cpu, cl->cpus) {
+			pcpu_pwr = &per_cpu(cpu_power_cost, cpu);
+			if (max_cost < *pcpu_pwr) {
+				max_cost = *pcpu_pwr;
+				max_cost_cpu = cpu;
+			}
+		}
+
+		if (!cpu_online(max_cost_cpu))
+			goto end;
+
+		pr_debug("msm_perf: Offlining CPU%d Power:%d\n", max_cost_cpu,
+								max_cost);
+		cpumask_set_cpu(max_cost_cpu, cl->offlined_cpus);
+		if (cpu_down(max_cost_cpu)) {
+			cpumask_clear_cpu(max_cost_cpu, cl->offlined_cpus);
+			pr_debug("msm_perf: Offlining CPU%d failed\n",
+								max_cost_cpu);
+		}
+
+end:
+		pcpu_pwr = &per_cpu(cpu_power_cost, max_cost_cpu);
+		*pcpu_pwr = 0;
+		if (num_online_managed(cl->cpus) <= cl->max_cpu_request)
+			break;
+	}
+
+	if (num_online_managed(cl->cpus) > cl->max_cpu_request)
+		return -EAGAIN;
+	else
+		return 0;
+}
+
+/*
  * try_hotplug tries to online/offline cores based on the current requirement.
  * It loops through the currently managed CPUs and tries to online/offline
  * them until the max_cpu_request criteria is met.
@@ -433,7 +503,16 @@ static void __ref try_hotplug(struct cpu_hp *data)
 
 	mutex_lock(&managed_cpus_lock);
 	if (num_online_managed(data->cpus) > data->max_cpu_request) {
-		for (i = num_present_cpus() - 1; i >= 0 && i < num_present_cpus(); i--) {
+		if (!rm_high_pwr_cost_cpus(data)) {
+			mutex_unlock(&managed_cpus_lock);
+			return;
+		}
+
+		/*
+		 * If power aware offlining fails due to power cost info
+		 * being unavaiable fall back to original implementation
+		 */
+		for (i = num_present_cpus() - 1; i >= 0; i--) {
 			if (!cpumask_test_cpu(i, data->cpus) ||	!cpu_online(i))
 				continue;
 
@@ -473,7 +552,7 @@ static void __ref release_cluster_control(struct cpumask *off_cpus)
 	int cpu;
 
 	for_each_cpu(cpu, off_cpus) {
-		pr_err("msm_perf: Release CPU %d\n", cpu);
+		pr_debug("msm_perf: Release CPU %d\n", cpu);
 		if (!cpu_up(cpu))
 			cpumask_clear_cpu(cpu, off_cpus);
 	}
@@ -528,7 +607,6 @@ static int __ref msm_performance_cpu_callback(struct notifier_block *nfb,
 		if (i_hp->max_cpu_request <=
 					num_online_managed(i_hp->cpus)) {
 			pr_debug("msm_perf: Prevent CPU%d onlining\n", cpu);
-			cpumask_set_cpu(cpu, i_hp->offlined_cpus);
 			return NOTIFY_BAD;
 		}
 		cpumask_clear_cpu(cpu, i_hp->offlined_cpus);
