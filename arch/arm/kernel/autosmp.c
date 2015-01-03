@@ -28,7 +28,7 @@
 #include <linux/hrtimer.h>
 #include <linux/powersuspend.h>
 
-#define DEBUG 0
+#define DEBUG 1
 
 #define ASMP_TAG "[AutoSMP]: "
 #define ASMP_STARTDELAY 20000
