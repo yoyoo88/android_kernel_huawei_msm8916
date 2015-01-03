@@ -30,7 +30,7 @@
 
 #define DEBUG 0
 
-#define ASMP_TAG "AutoSMP: "
+#define ASMP_TAG "[AutoSMP]: "
 #define ASMP_STARTDELAY 20000
 
 struct asmp_cpudata_t {
@@ -110,7 +110,8 @@ static void __cpuinit asmp_work_fn(struct work_struct *work) {
 			cpu_up(cpu);
 			cycle = 0;
 #if DEBUG
-			pr_info(ASMP_TAG"CPU[%d] on\n", cpu);
+			pr_info(ASMP_TAG"CPU[%d] on | Mask=[%d%d%d%d]\n",
+				cpu, cpu_online(0), cpu_online(1), cpu_online(2), cpu_online(3));
 #endif
 		}
 	/* unplug slowest core if all online cores are under down_rate limit */
@@ -120,7 +121,8 @@ static void __cpuinit asmp_work_fn(struct work_struct *work) {
  			cpu_down(slow_cpu);
 			cycle = 0;
 #if DEBUG
-			pr_info(ASMP_TAG"CPU[%d] off\n", slow_cpu);
+			pr_info(ASMP_TAG"CPU[%d] off | Mask=[%d%d%d%d]\n",
+				slow_cpu, cpu_online(0), cpu_online(1), cpu_online(2), cpu_online(3));
 			per_cpu(asmp_cpudata, cpu).times_hotplugged += 1;
 #endif
 		}
@@ -142,7 +144,7 @@ static void asmp_suspend(struct power_suspend *handler) {
 	if (enabled)
 		cancel_delayed_work_sync(&asmp_work);
 
-	pr_info(ASMP_TAG"suspended\n");
+	pr_info(ASMP_TAG"Screen -> off. Suspended.\n");
 }
 
 static void __cpuinit asmp_resume(struct power_suspend *handler) {
@@ -161,7 +163,7 @@ static void __cpuinit asmp_resume(struct power_suspend *handler) {
 		queue_delayed_work(asmp_workq, &asmp_work,
 				msecs_to_jiffies(asmp_param.delay));
 
-	pr_info(ASMP_TAG"resumed\n");
+	pr_info(ASMP_TAG"Screen -> on. Resumed.\n");
 }
 
 static struct power_suspend __refdata asmp_power_suspend_handler = {
@@ -177,7 +179,7 @@ static int __cpuinit set_enabled(const char *val, const struct kernel_param *kp)
 	if (enabled) {
 		queue_delayed_work(asmp_workq, &asmp_work,
 				msecs_to_jiffies(asmp_param.delay));
-		pr_info(ASMP_TAG"enabled\n");
+		pr_info(ASMP_TAG"Enabled.\n");
 	} else {
 		cancel_delayed_work_sync(&asmp_work);
 		unregister_power_suspend(&asmp_power_suspend_handler);
@@ -187,7 +189,7 @@ static int __cpuinit set_enabled(const char *val, const struct kernel_param *kp)
 			if (!cpu_online(cpu))
 				cpu_up(cpu);
 		}
-		pr_info(ASMP_TAG"disabled\n");
+		pr_info(ASMP_TAG"Disabled.\n");
 	}
 	return ret;
 }
@@ -312,16 +314,16 @@ static int __init asmp_init(void) {
 	if (asmp_kobject) {
 		rc = sysfs_create_group(asmp_kobject, &asmp_attr_group);
 		if (rc)
-			pr_warn(ASMP_TAG"ERROR, create sysfs group");
+			pr_warn(ASMP_TAG"sysfs: ERROR, create sysfs group.");
 #if DEBUG
 		rc = sysfs_create_group(asmp_kobject, &asmp_stats_attr_group);
 		if (rc)
-			pr_warn(ASMP_TAG"ERROR, create sysfs stats group");
+			pr_warn(ASMP_TAG"sysfs: ERROR, create sysfs stats group.");
 #endif
 	} else
-		pr_warn(ASMP_TAG"ERROR, create sysfs kobj");
+		pr_warn(ASMP_TAG"sysfs: ERROR, create sysfs kobj");
 
-	pr_info(ASMP_TAG"initialized\n");
+	pr_info(ASMP_TAG"Init complete.\n");
 	return 0;
 }
 late_initcall(asmp_init);
