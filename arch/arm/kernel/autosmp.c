@@ -110,7 +110,7 @@ static void __cpuinit asmp_work_fn(struct work_struct *work) {
 			cpu_up(cpu);
 			cycle = 0;
 #if DEBUG
-			pr_info(ASMP_TAG"CPU[%d] on | Mask=[%d%d%d%d]\n",
+			pr_info(ASMP_TAG"CPU [%d] On  | Mask [%d%d%d%d]\n",
 				cpu, cpu_online(0), cpu_online(1), cpu_online(2), cpu_online(3));
 #endif
 		}
@@ -121,7 +121,7 @@ static void __cpuinit asmp_work_fn(struct work_struct *work) {
  			cpu_down(slow_cpu);
 			cycle = 0;
 #if DEBUG
-			pr_info(ASMP_TAG"CPU[%d] off | Mask=[%d%d%d%d]\n",
+			pr_info(ASMP_TAG"CPU [%d] Off | Mask [%d%d%d%d]\n",
 				slow_cpu, cpu_online(0), cpu_online(1), cpu_online(2), cpu_online(3));
 			per_cpu(asmp_cpudata, cpu).times_hotplugged += 1;
 #endif
@@ -144,7 +144,7 @@ static void asmp_suspend(struct power_suspend *handler) {
 	if (enabled)
 		cancel_delayed_work_sync(&asmp_work);
 
-	pr_info(ASMP_TAG"Screen -> off. Suspended.\n");
+	pr_info(ASMP_TAG"Screen -> Off. Suspended.\n");
 }
 
 static void __cpuinit asmp_resume(struct power_suspend *handler) {
@@ -163,7 +163,7 @@ static void __cpuinit asmp_resume(struct power_suspend *handler) {
 		queue_delayed_work(asmp_workq, &asmp_work,
 				msecs_to_jiffies(asmp_param.delay));
 
-	pr_info(ASMP_TAG"Screen -> on. Resumed.\n");
+	pr_info(ASMP_TAG"Screen -> On. Resumed.\n");
 }
 
 static struct power_suspend __refdata asmp_power_suspend_handler = {
