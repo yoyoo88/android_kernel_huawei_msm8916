@@ -129,7 +129,7 @@ static void __cpuinit asmp_work_fn(struct work_struct *work) {
 	queue_delayed_work(asmp_workq, &asmp_work, delay_jif);
 }
 
-static void asmp_suspend(struct power_suspend *h) {
+static void asmp_suspend(struct power_suspend *handler) {
 	unsigned int cpu;
 
 	/* unplug online cpu cores */
@@ -145,7 +145,7 @@ static void asmp_suspend(struct power_suspend *h) {
 	pr_info(ASMP_TAG"suspended\n");
 }
 
-static void __cpuinit asmp_resume(struct power_suspend *h) {
+static void __cpuinit asmp_resume(struct power_suspend *handler) {
 	unsigned int cpu;
 
 	/* hotplug offline cpu cores */
@@ -180,6 +180,7 @@ static int __cpuinit set_enabled(const char *val, const struct kernel_param *kp)
 		pr_info(ASMP_TAG"enabled\n");
 	} else {
 		cancel_delayed_work_sync(&asmp_work);
+		unregister_power_suspend(&asmp_power_suspend_handler);
 		for_each_present_cpu(cpu) {
 			if (num_online_cpus() >= nr_cpu_ids)
 				break;
