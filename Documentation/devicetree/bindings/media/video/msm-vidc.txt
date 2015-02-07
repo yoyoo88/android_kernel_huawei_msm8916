@@ -7,7 +7,9 @@ Required properties:
 	- "venus"
 	- "q6"
 - qcom,max-hw-load: The maximum load the hardware can support expressed in units
-  of macroblocks per second.
+  of macroblocks per second. The load is a reflection of hardware capability
+  rather than a performance guarantee. Performance is guaranteed only up to
+  advertised capability of the chipset.
 
 Optional properties:
 - reg : offset and length of the register set for the device.
@@ -22,6 +24,14 @@ Optional properties:
   The format of the node should follow the layout specified by the bus provider
   for bus consumers at Documentation/devicetree/bindings/arm/msm/msm_bus.txt.
   In addition to the properties specified by the bus provider client also needs
+	- qcom,bus-passive: A bool indicating the bus is "not active".  Active
+	  buses are defined as buses that are scaled according to hardware load.
+	  Passive buses are not scaled by load and are typically just "turned on"
+	  to keep certain clocks (that aren't directly controllable by the driver)
+	  high.
+	- qcom,bus-low-power: A bool indicating the bus is "in low-power".  In
+	  this mode the bus load is lower than the regular sesion. This is enabled when
+	  power save is enabled in driver.
         - qcom,bus-configs: A bitmap that describes the configuration of the
           bus. The bitmaps are as follows:
           supports mvc encoder = 0x00000001
@@ -92,6 +102,18 @@ Optional properties:
   gate-able = 0x2 (if the driver should disable the clock if no load)
 - qcom,sw-power-collapse = A bool indicating if video hardware core can be
   power collapsed in idle state.
+- qcom,early-fw-load = A bool indicating if video firmware should be loaded
+  during probe. When no video session is active, the video hardware will be
+  power collapsed.
+- qcom,use-non-secure-pil = A bool indicating which type of pil to use to load
+  the fw.
+- qcom,use-dynamic-bw-update = A bool indicating whether dynamic bandwidth
+  update request should be sent to msm bus or not.
+- qcom,fw-bias = The address at which venus fw is loaded (manually).
+- qcom,enable-idle-indicator = A bool to enable video hardware to generate
+  idle message when it is in idle state.
+- qcom,enable-thermal-mitigation = A bool to enable thermal mitigation when
+  thermal run away occurs.
 
 Example:
 
@@ -118,7 +140,9 @@ Example:
 		clock-names = "foo_clk", "bar_clk", "baz_clk";
 		qcom,clock-configs = <0x3 0x1 0x0>;
 		qcom,sw-power-collapse;
+		qcom,early-fw-load;
 		qcom,enable-idle-indicator;
+		qcom,enable-thermal-mitigation;
 		qcom,msm-bus-clients {
 			qcom,msm-bus-client@0 {
 				qcom,msm-bus,name = "venc-ddr";
@@ -139,6 +163,8 @@ Example:
 					<63 512 0 0>,
 					<63 512 104000 303000>;
 				qcom,bus-configs = <0xf>;
+				qcom,bus-passive;
+				qcom,bus-low-power;
 			};
 		};
 		qcom,vidc-iommu-domains {
@@ -154,5 +180,7 @@ Example:
 							<0x7c1>;
 			};
 		};
-
+		qcom,use-non-secure-pil;
+		qcom,use_dynamic_bw_update;
+		qcom,fw-bias = <0xe000000>;
 	};
