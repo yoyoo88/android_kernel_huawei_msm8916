@@ -410,6 +410,62 @@ void notrace ramoops_console_write_buf(const char *buf, size_t size)
 	persistent_ram_write(cxt->cprz, buf, size);
 }
 
+#ifdef CONFIG_OF
+static struct of_device_id ramoops_of_match[] = {
+	{ .compatible = "ramoops", },
+	{ },
+};
+
+MODULE_DEVICE_TABLE(of, ramoops_of_match);
+static void  ramoops_of_init(struct platform_device *pdev)
+{
+	const struct device *dev = &pdev->dev;
+	struct ramoops_platform_data *pdata;
+	struct device_node *np = pdev->dev.of_node;
+	u32 start, size, console, record, dump_oops;
+	int ret;
+
+	pdata = dev_get_drvdata(dev);
+	if (!pdata) {
+		pr_err("private data is empty!\n");
+		return;
+	}
+	ret = of_property_read_u32(np, "android,ramoops-buffer-start",
+				&start);
+	if (ret)
+		return;
+
+	ret = of_property_read_u32(np, "android,ramoops-buffer-size",
+				&size);
+	if (ret)
+		return;
+
+	ret = of_property_read_u32(np, "android,ramoops-console-size",
+				&console);
+	if (ret)
+		return;
+
+	ret = of_property_read_u32(np, "android,ramoops-record-size",
+				&record);
+	if (ret)
+		return;
+
+	if (of_get_property(np, "dump-oops", NULL))
+		dump_oops = 1;
+
+	pdata->mem_address = start;
+	pdata->mem_size = size;
+	pdata->console_size = console;
+	pdata->record_size = record;
+	pdata->dump_oops = dump_oops;
+}
+#else
+static inline void ramoops_of_init(struct platform_device *pdev)
+{
+	return;
+}
+#endif
+
 static int ramoops_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
