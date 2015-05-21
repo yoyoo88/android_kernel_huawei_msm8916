@@ -434,6 +434,7 @@ EXPORT_SYMBOL(strchr);
 #endif
 
 #ifndef __HAVE_ARCH_STRRCHR
+#if 0
 /**
  * strrchr - Find the last occurrence of a character in a string
  * @s: The string to be searched
@@ -448,6 +449,7 @@ char *strrchr(const char *s, int c)
        } while (--p >= s);
        return NULL;
 }
+#endif
 EXPORT_SYMBOL(strrchr);
 #endif
 
