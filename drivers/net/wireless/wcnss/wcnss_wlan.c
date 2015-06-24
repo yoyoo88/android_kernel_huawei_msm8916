@@ -2648,6 +2648,7 @@ wcnss_trigger_config(struct platform_device *pdev)
 {
 	int ret;
 	int rc;
+	struct clk *snoc_qosgen;
 	struct qcom_wcnss_opts *pdata;
 	struct resource *res;
 	int is_pronto_vt;
@@ -2994,6 +2995,16 @@ wcnss_trigger_config(struct platform_device *pdev)
 			if (rc < 0)
 				pr_err("Failed to get battery voltage with error= %d\n",
 									rc);
+		}
+	snoc_qosgen = clk_get(&pdev->dev, "snoc_qosgen");
+
+	if (IS_ERR(snoc_qosgen)) {
+		pr_err("Couldn't get snoc_qosgen\n");
+	} else {
+		if (clk_prepare_enable(snoc_qosgen)) {
+			pr_err("snoc_qosgen enable failed\n");
+		} else {
+			pr_info("snoc_qosgen configured successfully\n");
 		}
 	}
 
