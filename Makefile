@@ -388,7 +388,9 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-delete-null-pointer-checks \
                    -fno-aggressive-loop-optimizations \
 		   -Wno-maybe-uninitialized \
-		   -std=gnu89
+		   -std=gnu89 \
+		   -Wno-unused \
+	           -Wno-builtin-macro-redefined
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
