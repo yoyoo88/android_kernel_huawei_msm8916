@@ -1473,7 +1473,11 @@ __releases(&info->lock)
 	}
 	file->private_data = info;
 	info->file = file;
-	if (info->fbops->fb_open) {
+	if (info->fbops->fb_open2) {
+		res = info->fbops->fb_open2(info, file, 1);
+		if (res)
+			module_put(info->fbops->owner);
+	} else if (info->fbops->fb_open) {
 		res = info->fbops->fb_open(info,1);
 		if (res)
 			module_put(info->fbops->owner);
@@ -1498,7 +1502,9 @@ __releases(&info->lock)
 
 	mutex_lock(&info->lock);
 	info->file = file;
-	if (info->fbops->fb_release)
+	if (info->fbops->fb_release2)
+		info->fbops->fb_release2(info, file, 1);
+	else if (info->fbops->fb_release)
 		info->fbops->fb_release(info,1);
 	module_put(info->fbops->owner);
 	mutex_unlock(&info->lock);
