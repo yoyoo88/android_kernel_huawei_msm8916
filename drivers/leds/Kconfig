@@ -297,7 +297,6 @@ config LEDS_QPNP
 	  To compile this driver as a module, choose M here: the module will
 	  be called leds-qpnp.
 
-<<<<<<< HEAD
 config LEDS_QPNP_FLASH
 	tristate "Support for QPNP Flash LEDs"
 	depends on SPMI && OF_SPMI
