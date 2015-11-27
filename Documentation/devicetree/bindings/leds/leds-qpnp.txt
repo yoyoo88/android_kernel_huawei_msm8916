@@ -23,7 +23,8 @@ WLED is primarily used as display backlight. Display subsystem uses
 LED triggers for WLED to control the brightness as needed.
 
 Optional properties for WLED:
-- qcom,num-strings: number of wled strings supported
+- qcom,num-strings: number of wled strings to be configured
+- qcom,num-physical-strings: number of physical wled strings supported
 - qcom,ovp-val: over voltage protection threshold,
 		follows enum wled_ovp_threshold
 - qcom,boost-curr-lim: boot currnet limit, follows enum wled_current_bost_limit
@@ -86,9 +87,6 @@ Optional properties for MPP LED:
 - qcom,use-blink: Use blink sysfs entry for switching into lpg mode.  For optimal use, set default mode to pwm.  All required lpg parameters must be supplied.
 - qcom,min-brightness - Lowest possible brightness supported on this LED other than 0.
 - qcom,current-setting: default current value for wled used as button backlight in mA
-- mpp-power-supply: regulator support for MPP LED
-- qcom,mpp-power-max-voltage - maximum voltage for MPP LED regulator. This should not be specified when no regulator is in use.
-- qcom,mpp-power-min-voltage - minimum voltage for MPP LED regulator. This should not be specified when no regulator is in use.
 
 Required properties for PWM mode only:
 - qcom,pwm-channel: pwm channel the led will operate on
