@@ -413,7 +413,7 @@ struct mpp_config_data {
 	u8	mode_ctrl;
 	u8	vin_ctrl;
 	u8	min_brightness;
-	u8 pwm_mode;
+	u8 	pwm_mode;
 	u32	max_uV;
 	u32	min_uV;
 	struct regulator *mpp_reg;
