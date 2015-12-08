@@ -56,7 +56,6 @@
 		cam_vana-supply = <&pm8916_l17>;
 		cam_vio-supply = <&pm8916_l6>;
 		cam_vaf-supply = <&pm8916_l10>;
-<<<<<<< HEAD
 		qcom,cam-vreg-name = "cam_vdig", "cam_vio", "cam_vana",
 							"cam_vaf";
 		qcom,cam-vreg-type = <0 1 0 0>;
@@ -64,12 +63,6 @@
 		qcom,cam-vreg-max-voltage = <2100000 0 2850000 2800000>;
 		qcom,cam-vreg-op-mode = <200000 0 80000 100000>;
 
-=======
-		qcom,cam-vreg-name = "cam_vaf";
-		qcom,cam-vreg-min-voltage = <2800000>;
-		qcom,cam-vreg-max-voltage = <2800000>;
-		qcom,cam-vreg-op-mode = <100000>;
->>>>>>> 06c4cb0... ARM: dts: msm: camera: Remove dts entries for vreg-type
 		pinctrl-names = "cam_default", "cam_suspend";
 		pinctrl-0 = <&cam_sensor_mclk0_default &cam_sensor_rear_default &camera_ldo_default>;
 		pinctrl-1 = <&cam_sensor_mclk0_sleep &cam_sensor_rear_sleep &camera_ldo_suspend>;
@@ -103,7 +96,6 @@
 		qcom,csiphy-sd-index = <1>;
 		qcom,csid-sd-index = <1>;
 		qcom,mount-angle = <270>;
-<<<<<<< HEAD
 
 		cam_vdig-supply = <&pm8916_s4>;
 		cam_vana-supply = <&pm8916_l17>;
@@ -114,12 +106,6 @@
 		qcom,cam-vreg-max-voltage = <2100000 0 2850000>;
 		qcom,cam-vreg-op-mode = <200000 0 80000>;
 
-=======
-		qcom,cam-vreg-name = "cam_vio", "cam_vana";
-		qcom,cam-vreg-min-voltage = <0 2850000>;
-		qcom,cam-vreg-max-voltage = <0 2850000>;
-		qcom,cam-vreg-op-mode = <0 80000>;
->>>>>>> 06c4cb0... ARM: dts: msm: camera: Remove dts entries for vreg-type
 		pinctrl-names = "cam_default", "cam_suspend";
 		pinctrl-0 = <&cam_sensor_mclk1_default &cam_sensor_front_default &camera_ldo_default>;
 		pinctrl-1 = <&cam_sensor_mclk1_sleep &cam_sensor_front_sleep &camera_ldo_suspend>;
