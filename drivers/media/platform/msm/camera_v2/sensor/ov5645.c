@@ -166,7 +166,8 @@ static struct msm_camera_i2c_reg_conf ov5645_full_settings[] = {
 	{0x3813, 0x06,},
 	{0x3814, 0x11,},
 	{0x3815, 0x11,},
-	{0x3820, 0x40,},
+	{0x3820, 0x47,},
+	{0x4514, 0x88,},
 	{0x3a02, 0x07,},
 	{0x3a03, 0xb0,},
 	{0x3a08, 0x01,},
@@ -215,7 +216,8 @@ static struct msm_camera_i2c_reg_conf ov5645_1080P_settings[] = {
 	{0x3813, 0x04,},
 	{0x3814, 0x11,},
 	{0x3815, 0x11,},
-	{0x3820, 0x40,},
+	{0x3820, 0x47,},
+	{0x4514, 0x88,},
 	{0x3a02, 0x04,},
 	{0x3a03, 0x60,},
 	{0x3a08, 0x01,},
@@ -492,6 +494,16 @@ static struct msm_camera_i2c_reg_conf ov5645_stop_settings[] = {
 	{0x3008, 0x42,},
 };
 
+static struct msm_camera_i2c_reg_conf ov5645_enable_aec_settings[] = {
+	{0x3503, 0x00,},
+	{0x3406, 0x00,},
+};
+
+static struct msm_camera_i2c_reg_conf ov5645_disable_aec_settings[] = {
+	{0x3503, 0x07,},
+	{0x3406, 0x01,},
+};
+
 static const struct i2c_device_id ov5645_i2c_id[] = {
 	{OV5645_SENSOR_NAME, (kernel_ulong_t)&ov5645_s_ctrl},
 	{ }
@@ -567,7 +579,7 @@ int32_t ov5645_sensor_config(struct msm_sensor_ctrl_t *s_ctrl,
 {
 	struct sensorb_cfg_data *cdata = (struct sensorb_cfg_data *)argp;
 	long rc = 0;
-	int32_t i = 0, shp_lev = 0, con_lev = 0, sat_lev = 0;
+	int32_t i = 0;
 	mutex_lock(s_ctrl->msm_sensor_mutex);
 	CDBG("%s:%d %s cfgtype = %d\n", __func__, __LINE__,
 		s_ctrl->sensordata->sensor_name, cdata->cfgtype);
@@ -659,6 +671,25 @@ int32_t ov5645_sensor_config(struct msm_sensor_ctrl_t *s_ctrl,
 			MSM_CAMERA_I2C_BYTE_DATA);
 		break;
 	case CFG_SET_START_STREAM:
+		if (s_ctrl->camera_stream_type != MSM_CAMERA_STREAM_SNAPSHOT) {
+			rc = s_ctrl->sensor_i2c_client->i2c_func_tbl->
+				i2c_write_conf_tbl(
+				s_ctrl->sensor_i2c_client, ov5645_enable_aec_settings,
+				ARRAY_SIZE(ov5645_enable_aec_settings),
+				MSM_CAMERA_I2C_BYTE_DATA);
+		} else {
+			rc = s_ctrl->sensor_i2c_client->i2c_func_tbl->
+				i2c_write_conf_tbl(
+				s_ctrl->sensor_i2c_client, ov5645_disable_aec_settings,
+				ARRAY_SIZE(ov5645_disable_aec_settings),
+				MSM_CAMERA_I2C_BYTE_DATA);
+		}
+		if (rc) {
+			pr_err("%s:%d failed\n", __func__, __LINE__);
+			rc = -EFAULT;
+			break;
+		}
+
 		rc = s_ctrl->sensor_i2c_client->i2c_func_tbl->
 			i2c_write_conf_tbl(
 			s_ctrl->sensor_i2c_client, ov5645_start_settings,
@@ -857,32 +888,22 @@ int32_t ov5645_sensor_config(struct msm_sensor_ctrl_t *s_ctrl,
 		}
 		break;
 		}
-	case CFG_SET_SATURATION:
-		if (copy_from_user(&sat_lev, (void *)cdata->cfg.setting,
-			sizeof(int32_t))) {
+	case CFG_SET_STREAM_TYPE: {
+		enum msm_camera_stream_type_t stream_type = MSM_CAMERA_STREAM_INVALID;
+		if (copy_from_user(&stream_type, (void *)cdata->cfg.setting,
+			sizeof(enum msm_camera_stream_type_t))) {
 			pr_err("%s:%d failed\n", __func__, __LINE__);
 			rc = -EFAULT;
 			break;
 		}
-		pr_debug("%s: Saturation Value is %d", __func__, sat_lev);
+		s_ctrl->camera_stream_type = stream_type;
+		break;
+	}
+	case CFG_SET_SATURATION:
 		break;
 	case CFG_SET_CONTRAST:
-		if (copy_from_user(&con_lev, (void *)cdata->cfg.setting,
-			sizeof(int32_t))) {
-			pr_err("%s:%d failed\n", __func__, __LINE__);
-			rc = -EFAULT;
-			break;
-		}
-		pr_debug("%s: Contrast Value is %d", __func__, con_lev);
 		break;
 	case CFG_SET_SHARPNESS:
-		if (copy_from_user(&shp_lev, (void *)cdata->cfg.setting,
-			sizeof(int32_t))) {
-			pr_err("%s:%d failed\n", __func__, __LINE__);
-			rc = -EFAULT;
-			break;
-		}
-		pr_debug("%s: Sharpness Value is %d", __func__, shp_lev);
 		break;
 	case CFG_SET_AUTOFOCUS:
 		/* TO-DO: set the Auto Focus */
@@ -891,6 +912,18 @@ int32_t ov5645_sensor_config(struct msm_sensor_ctrl_t *s_ctrl,
 	case CFG_CANCEL_AUTOFOCUS:
 		/* TO-DO: Cancel the Auto Focus */
 		pr_debug("%s: Cancelling Auto Focus", __func__);
+		break;
+	case CFG_SET_ISO:
+		break;
+	case CFG_SET_EXPOSURE_COMPENSATION:
+		break;
+	case CFG_SET_EFFECT:
+		break;
+	case CFG_SET_ANTIBANDING:
+		break;
+	case CFG_SET_BESTSHOT_MODE:
+		break;
+	case CFG_SET_WHITE_BALANCE:
 		break;
 	default:
 		rc = -EFAULT;
