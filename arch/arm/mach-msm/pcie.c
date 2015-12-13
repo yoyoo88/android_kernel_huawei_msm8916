@@ -1125,7 +1125,17 @@ int msm_pcie_enable(struct msm_pcie_dev_t *dev, u32 options)
 	msm_pcie_write_mask(dev->parf + PCIE20_PARF_PHY_CTRL, BIT(0), 0);
 
 	/* change DBI base address */
-	writel_relaxed(0, dev->parf + PCIE20_PARF_DBI_BASE_ADDR);
+
+	if (dev->rc_idx)
+		writel_relaxed(0x361c, dev->parf + PCIE20_PARF_SYS_CTRL);
+	else
+		writel_relaxed(0x3656, dev->parf + PCIE20_PARF_SYS_CTRL);
+
+	if (dev->use_msi) {
+		PCIE_DBG(dev, "RC%d: enable WR halt.\n", dev->rc_idx);
+		msm_pcie_write_mask(dev->parf +
+			PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT, 0, BIT(31));
+	}
 
 	/* init PCIe PHY */
 	pcie_phy_init(dev);
