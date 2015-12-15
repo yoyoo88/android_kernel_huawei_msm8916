@@ -26,10 +26,11 @@
 #include	<linux/sensors.h>
 
 
-#define KIONIX_ACCEL_I2C_ADDR		0x0F
+//#define KIONIX_ACCEL_I2C_ADDR		0x0F
 #define KIONIX_ACCEL_NAME			"kionix_accel"
 #define KIONIX_ACCEL_INPUT_NAME		"accelerometer"
 #define KIONIX_ACCEL_IRQ			"kionix-irq"
+#define ECS_IOCTL_READ_ACCEL_XYZ     _IOR(0xA1, 0x06, char[3])
 
 /* set print debug info interval 10s*/
 #define DBG_INTERVAL_10S 			10*HZ
@@ -197,6 +198,7 @@ struct kionix_accel_platform_data {
 	 * accelerometer. Unit is measured in milli-
 	 * seconds. Recommended value is 5ms. */
 	unsigned int min_interval;
+
 	/* Use this variable to set the default interval for
 	 * data to be reported from the accelerometer. This
 	 * value will be used during driver setup process,
@@ -205,6 +207,7 @@ struct kionix_accel_platform_data {
 	unsigned int poll_interval;
 	int gpio_int1;
 	int gpio_int2;
+
 	/* This variable controls the corresponding direction
 	 * of the accelerometer that is mounted on the board
 	 * of the device. Refer to the porting guide for
@@ -250,18 +253,126 @@ struct kionix_accel_platform_data {
 /******************************************************************************
  * Accelerometer WHO_AM_I return value
  *****************************************************************************/
+#define KIONIX_ACCEL_WHO_AM_I_KXTE9 		0x00
+#define KIONIX_ACCEL_WHO_AM_I_KXTF9 		0x01
+#define KIONIX_ACCEL_WHO_AM_I_KXTI9_1001 	0x04
+#define KIONIX_ACCEL_WHO_AM_I_KXTIK_1004 	0x05
+#define KIONIX_ACCEL_WHO_AM_I_KXTJ9_1005 	0x07
+#define KIONIX_ACCEL_WHO_AM_I_KXTJ9_1007 	0x08
+#define KIONIX_ACCEL_WHO_AM_I_KXCJ9_1008 	0x0A
+#define KIONIX_ACCEL_WHO_AM_I_KXTJ2_1009 	0x09
+#define KIONIX_ACCEL_WHO_AM_I_KXCJK_1013 	0x11
 #define KIONIX_ACCEL_WHO_AM_I_KX023		0x15
 
 /******************************************************************************
  * Accelerometer Grouping
  *****************************************************************************/
-
-#define KIONIX_ACCEL	7	/* KX023 */
+#define KIONIX_ACCEL_GRP1	1	/* KXTE9 */
+#define KIONIX_ACCEL_GRP2	2	/* KXTF9/I9-1001/J9-1005 */
+#define KIONIX_ACCEL_GRP3	3	/* KXTIK-1004 */
+#define KIONIX_ACCEL_GRP4	4	/* KXTJ9-1007/KXCJ9-1008 */
+#define KIONIX_ACCEL_GRP5	5	/* KXTJ2-1009 */
+#define KIONIX_ACCEL_GRP6	6	/* KXCJK-1013 */
+#define KIONIX_ACCEL_GRP7	7	/* KX023 */
+//#define KIONIX_ACCEL	7	/* KX023 */
+/*****************************************************************************/
 
 /******************************************************************************
  * Registers for All Accelerometer Group
  *****************************************************************************/
 #define ACCEL_WHO_AM_I		0x0F
+/*****************************************************************************/
+
+/*****************************************************************************/
+/* Registers for Accelerometer Group 1 */
+/*****************************************************************************/
+/* Output Registers */
+#define ACCEL_GRP1_XOUT			0x12
+/* Control Registers */
+#define ACCEL_GRP1_CTRL_REG1	0x1B
+/* CTRL_REG1 */
+#define ACCEL_GRP1_PC1_OFF		0x7F
+#define ACCEL_GRP1_PC1_ON		(1 << 7)
+#define ACCEL_GRP1_ODR40		(3 << 3)
+#define ACCEL_GRP1_ODR10		(2 << 3)
+#define ACCEL_GRP1_ODR3			(1 << 3)
+#define ACCEL_GRP1_ODR1			(0 << 3)
+#define ACCEL_GRP1_ODR_MASK		(3 << 3)
+
+/*****************************************************************************/
+
+/*****************************************************************************/
+/* Registers for Accelerometer Group 2 & 3 */
+/*****************************************************************************/
+/* Output Registers */
+#define ACCEL_GRP2_XOUT_L		0x06
+/* Control Registers */
+#define ACCEL_GRP2_INT_REL		0x1A
+#define ACCEL_GRP2_CTRL_REG1	0x1B
+#define ACCEL_GRP2_INT_CTRL1	0x1E
+#define ACCEL_GRP2_DATA_CTRL	0x21
+/* CTRL_REG1 */
+#define ACCEL_GRP2_PC1_OFF		0x7F
+#define ACCEL_GRP2_PC1_ON		(1 << 7)
+#define ACCEL_GRP2_DRDYE		(1 << 5)
+#define ACCEL_GRP2_G_8G			(2 << 3)
+#define ACCEL_GRP2_G_4G			(1 << 3)
+#define ACCEL_GRP2_G_2G			(0 << 3)
+#define ACCEL_GRP2_G_MASK		(3 << 3)
+#define ACCEL_GRP2_RES_8BIT		(0 << 6)
+#define ACCEL_GRP2_RES_12BIT	(1 << 6)
+#define ACCEL_GRP2_RES_MASK		(1 << 6)
+/* INT_CTRL1 */
+#define ACCEL_GRP2_IEA			(1 << 4)
+#define ACCEL_GRP2_IEN			(1 << 5)
+/* DATA_CTRL_REG */
+#define ACCEL_GRP2_ODR12_5		0x00
+#define ACCEL_GRP2_ODR25		0x01
+#define ACCEL_GRP2_ODR50		0x02
+#define ACCEL_GRP2_ODR100		0x03
+#define ACCEL_GRP2_ODR200		0x04
+#define ACCEL_GRP2_ODR400		0x05
+#define ACCEL_GRP2_ODR800		0x06
+/*****************************************************************************/
+
+/*****************************************************************************/
+/* Registers for Accelerometer Group 4 & 5 & 6 */
+/*****************************************************************************/
+/* Output Registers */
+#define ACCEL_GRP4_XOUT_L		0x06
+/* Control Registers */
+#define ACCEL_GRP4_INT_REL		0x1A
+#define ACCEL_GRP4_CTRL_REG1	0x1B
+#define ACCEL_GRP4_INT_CTRL1	0x1E
+#define ACCEL_GRP4_DATA_CTRL	0x21
+/* CTRL_REG1 */
+#define ACCEL_GRP4_PC1_OFF		0x7F
+#define ACCEL_GRP4_PC1_ON		(1 << 7)
+#define ACCEL_GRP4_DRDYE		(1 << 5)
+#define ACCEL_GRP4_G_8G			(2 << 3)
+#define ACCEL_GRP4_G_4G			(1 << 3)
+#define ACCEL_GRP4_G_2G			(0 << 3)
+#define ACCEL_GRP4_G_MASK		(3 << 3)
+#define ACCEL_GRP4_RES_8BIT		(0 << 6)
+#define ACCEL_GRP4_RES_12BIT	(1 << 6)
+#define ACCEL_GRP4_RES_MASK		(1 << 6)
+/* INT_CTRL1 */
+#define ACCEL_GRP4_IEA			(1 << 4)
+#define ACCEL_GRP4_IEN			(1 << 5)
+/* DATA_CTRL_REG */
+#define ACCEL_GRP4_ODR0_781		0x08
+#define ACCEL_GRP4_ODR1_563		0x09
+#define ACCEL_GRP4_ODR3_125		0x0A
+#define ACCEL_GRP4_ODR6_25		0x0B
+#define ACCEL_GRP4_ODR12_5		0x00
+#define ACCEL_GRP4_ODR25		0x01
+#define ACCEL_GRP4_ODR50		0x02
+#define ACCEL_GRP4_ODR100		0x03
+#define ACCEL_GRP4_ODR200		0x04
+#define ACCEL_GRP4_ODR400		0x05
+#define ACCEL_GRP4_ODR800		0x06
+#define ACCEL_GRP4_ODR1600		0x07
+/*****************************************************************************/
 
 /*****************************************************************************/
 /* Registers for Accelerometer Group 7 */
@@ -276,25 +387,25 @@ struct kionix_accel_platform_data {
 /* CTRL_REG1 */
 #define ACCEL_PC1_OFF		0x7F
 #define ACCEL_PC1_ON		(1 << 7)
-#define ACCEL_DRDYE			(1 << 5)
-#define ACCEL_G_8G			(2 << 3)
-#define ACCEL_G_4G			(1 << 3)
-#define ACCEL_G_2G			(0 << 3)
+#define ACCEL_DRDYE		(1 << 5)
+#define ACCEL_G_8G		(2 << 3)
+#define ACCEL_G_4G		(1 << 3)
+#define ACCEL_G_2G		(0 << 3)
 #define ACCEL_G_MASK		(3 << 3)
 #define ACCEL_RES_8BIT		(0 << 6)
 #define ACCEL_RES_16BIT		(1 << 6)
 #define ACCEL_RES_MASK		(1 << 6)
 /* INT_CTRL1 */
-#define ACCEL_IEA			(1 << 4)
-#define ACCEL_IEN			(1 << 5)
+#define ACCEL_IEA		(1 << 4)
+#define ACCEL_IEN		(1 << 5)
 /* DATA_CTRL_REG */
 #define ACCEL_ODR0_781		0x08
 #define ACCEL_ODR1_563		0x09
 #define ACCEL_ODR3_125		0x0A
 #define ACCEL_ODR6_25		0x0B
 #define ACCEL_ODR12_5		0x00
-#define ACCEL_ODR25			0x01
-#define ACCEL_ODR50			0x02
+#define ACCEL_ODR25		0x01
+#define ACCEL_ODR50		0x02
 #define ACCEL_ODR100		0x03
 #define ACCEL_ODR200		0x04
 #define ACCEL_ODR400		0x05

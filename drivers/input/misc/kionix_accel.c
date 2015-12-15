@@ -55,6 +55,48 @@ static u8 dataflag = 0;
 /* The following table lists the maximum appropriate poll interval for each
  * available output data rate (ODR).
  */
+
+static const struct {
+	unsigned int cutoff;
+	u8 mask;
+} kionix_accel_grp1_odr_table[] = {
+	{ 100,	ACCEL_GRP1_ODR40 },
+	{ 334,	ACCEL_GRP1_ODR10 },
+	{ 1000,	ACCEL_GRP1_ODR3  },
+	{ 0,	ACCEL_GRP1_ODR1  },
+};
+
+static const struct {
+	unsigned int cutoff;
+	u8 mask;
+} kionix_accel_grp2_odr_table[] = {
+	{ 3,	ACCEL_GRP2_ODR800 },
+	{ 5,	ACCEL_GRP2_ODR400 },
+	{ 10,	ACCEL_GRP2_ODR200 },
+	{ 20,	ACCEL_GRP2_ODR100 },
+	{ 40,	ACCEL_GRP2_ODR50  },
+	{ 80,	ACCEL_GRP2_ODR25  },
+	{ 0,	ACCEL_GRP2_ODR12_5},
+};
+
+static const struct {
+	unsigned int cutoff;
+	u8 mask;
+} kionix_accel_grp4_odr_table[] = {
+	{ 2,	ACCEL_GRP4_ODR1600 },
+	{ 3,	ACCEL_GRP4_ODR800 },
+	{ 5,	ACCEL_GRP4_ODR400 },
+	{ 10,	ACCEL_GRP4_ODR200 },
+	{ 20,	ACCEL_GRP4_ODR100 },
+	{ 40,	ACCEL_GRP4_ODR50  },
+	{ 80,	ACCEL_GRP4_ODR25  },
+	{ 160,	ACCEL_GRP4_ODR12_5},
+	{ 320,	ACCEL_GRP4_ODR6_25},
+	{ 640,	ACCEL_GRP4_ODR3_125},
+	{ 1280,	ACCEL_GRP4_ODR1_563},
+	{ 0,	ACCEL_GRP4_ODR0_781},
+};
+
  static const struct {
 	unsigned int cutoff;
 	u8 mask;
