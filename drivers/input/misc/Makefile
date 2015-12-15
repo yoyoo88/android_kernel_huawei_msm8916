@@ -76,6 +76,7 @@ obj-$(CONFIG_SENSORS_AP3426)		+= ap3426.o
 obj-$(CONFIG_SENSORS_KIONIX)	+= kionix_accel.o kionix_acc_monitor.o
 obj-$(CONFIG_HUAWEI_HALL_AK8789) += ak8789.o
 obj-$(CONFIG_APDS993X)		+= apds993x_ls.o
+obj-$(CONFIG_APDS9930)		+= apds993x.o
 obj-$(CONFIG_RPR521)            += rohm_rpr521.o
 obj-$(CONFIG_SENSORS_BMA2X2)	+= bstclass.o
 

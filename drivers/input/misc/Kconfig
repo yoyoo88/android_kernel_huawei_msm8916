@@ -742,6 +742,8 @@ config SENSORS_AP3426
 	  To compile this driver as a module, choose M here: the
 	  module will be called ap3426.
 
+
+
 config SENSORS_MMC3416X
 	tristate "MMC3416xPJ 3-axis magnetic sensor driver"
 	depends on I2C
@@ -847,6 +849,17 @@ config APDS993X
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called apds9950. If unsure, say N here.
+
+config APDS9930
+	tristate "Avago APDS9930 combined als and proximity sensors"
+	depends on I2C
+	help
+	  Say Y here if you want to build a driver for Avago APDS9930
+	  combined ambient light and proximity sensor chip.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called apds9950. If unsure, say N here.
+
 config RPR521
 	tristate "ROHM RPR0521 combined als and proximity sensors"
 	depends on I2C
