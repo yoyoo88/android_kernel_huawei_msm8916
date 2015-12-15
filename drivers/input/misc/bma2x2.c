@@ -2904,7 +2904,7 @@ static int bma2x2_normal_to_suspend(struct bma2x2_data *bma2x2,
 static int bma2x2_set_mode(struct i2c_client *client, unsigned char mode)
 {
 	int comres = 0;
-	unsigned char data1, data2;
+	unsigned char data1 = 0, data2 = 0;
 	int ret = 0;
 	struct bma2x2_data *bma2x2 = i2c_get_clientdata(client);
 
