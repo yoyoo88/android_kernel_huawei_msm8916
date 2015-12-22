@@ -904,6 +904,7 @@ static int mdss_fb_probe(struct platform_device *pdev)
 	mfd->bl_scale = 1024;
 	mfd->bl_min_lvl = 30;
 	mfd->fb_imgType = MDP_RGBA_8888;
+	mfd->calib_mode_bl = 0;
 
 	if (mfd->panel.type == MIPI_VIDEO_PANEL ||
 				mfd->panel.type == MIPI_CMD_PANEL) {
@@ -1357,6 +1358,16 @@ void mdss_fb_update_backlight(struct msm_fb_data_type *mfd)
 			pdata->set_backlight(pdata, temp);
 			mfd->bl_level_scaled = mfd->unset_bl_level;
 			mfd->bl_updated = 1;
+			/*
+			 * If in AD calibration mode then frameworks would not
+			 * be allowed to update backlight hence post unblank
+			 * the backlight would remain 0 (0 is set in blank).
+			 * Hence resetting back to calibration mode value
+			 */
+			if (!IS_CALIB_MODE_BL(mfd))
+				mdss_fb_set_backlight(mfd, mfd->unset_bl_level);
+			else
+				mdss_fb_set_backlight(mfd, mfd->calib_mode_bl);
 		}
 	}
 	mutex_unlock(&mfd->bl_lock);
