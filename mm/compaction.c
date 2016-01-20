@@ -17,6 +17,7 @@
 #include <linux/balloon_compaction.h>
 #include <linux/page-isolation.h>
 #include <linux/fb.h>
+#include <linux/kasan.h>
 #include <linux/kthread.h>
 #include <linux/freezer.h>
 #include <linux/module.h>
@@ -63,6 +64,7 @@ static void map_pages(struct list_head *list)
 	list_for_each_entry(page, list, lru) {
 		arch_alloc_page(page, 0);
 		kernel_map_pages(page, 1, 1);
+		kasan_alloc_pages(page, 0);
 	}
 }
 
