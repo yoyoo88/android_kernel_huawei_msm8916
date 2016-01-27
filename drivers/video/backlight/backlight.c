@@ -111,6 +111,8 @@ static unsigned int backlight_calc_sysedp_state(struct backlight_device *bd)
 	brightness = bd->props.brightness;
 	brightness = (brightness * cur_sd_brightness)/255;
 	state = 1 + brightness*10 / bd->props.max_brightness;
+	if (bd->props.state & BL_CORE_FBBLANK)
+		state = 0;
 	return brightness ? state : 0;
 }
 
