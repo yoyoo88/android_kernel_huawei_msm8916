@@ -6,6 +6,7 @@ ccflags-y += -Idrivers/media/platform/msm/camera_v2/pproc
 ccflags-y += -Idrivers/media/platform/msm/camera_v2/msm_vb2
 ccflags-y += -Idrivers/media/platform/msm/camera_v2/camera
 ccflags-y += -Idrivers/media/platform/msm/camera_v2/jpeg_10
+ccflags-y += -Idrivers/media/platform/msm/camera_v2/fd
 
 obj-$(CONFIG_MSMB_CAMERA) += msm.o
 obj-$(CONFIG_MSMB_CAMERA) += hw_camera_common.o
