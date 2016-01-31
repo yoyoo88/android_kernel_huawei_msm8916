@@ -702,14 +702,14 @@ $code.=<<___;
 # define BSAES_ASM_EXTENDED_KEY
 # define XTS_CHAIN_TWEAK
 # define __ARM_ARCH__ __LINUX_ARM_ARCH__
-# define __ARM_ARCH__	7
+# define __ARM_MAX_ARCH__ 7
 #endif
 
 #ifdef __thumb__
 # define adrl adr
 #endif
 
-#if __ARM_ARCH__>=7
+#if __ARM_MAX_ARCH__>=7
 .arch	armv7-a
 .fpu	neon
 
