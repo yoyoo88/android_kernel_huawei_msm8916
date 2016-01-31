@@ -701,6 +701,7 @@ $code.=<<___;
 # define VFP_ABI_FRAME	0
 # define BSAES_ASM_EXTENDED_KEY
 # define XTS_CHAIN_TWEAK
+# define __ARM_ARCH__ __LINUX_ARM_ARCH__
 # define __ARM_ARCH__	7
 #endif
 
@@ -709,6 +710,9 @@ $code.=<<___;
 #endif
 
 #if __ARM_ARCH__>=7
+.arch	armv7-a
+.fpu	neon
+
 .text
 .syntax	unified 	@ ARMv7-capable assembler is expected to handle this
 #ifdef __thumb2__
@@ -716,8 +720,6 @@ $code.=<<___;
 #else
 .code   32
 #endif
-
-.fpu	neon
 
 .type	_bsaes_decrypt8,%function
 .align	4
@@ -1657,9 +1659,11 @@ bsaes_xts_encrypt:
 	vld1.8	{@XMM[8]}, [r0]			@ initial tweak
 	adr	$magic, .Lxts_magic
 
+#ifndef		XTS_CHAIN_TWEAK
 	subs	$len, #0x80
 	blo	.Lxts_enc_short
 	b	.Lxts_enc_loop
+#endif
 
 .align	4
 .Lxts_enc_loop:
