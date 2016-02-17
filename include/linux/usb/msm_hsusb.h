@@ -71,11 +71,6 @@ enum usb_mode_type {
 	USB_OTG,
 };
 
- enum usb_otg_chargerIC {
-    OTG_CHGIC_NONE = 0,
-    OTG_CHGIC_BQ24152 = 1,
-    OTG_CHGIC_MAX77819 = 2,
-};
 /**
  * OTG control
  *
@@ -266,7 +261,6 @@ struct msm_otg_platform_data {
 	enum otg_control_type otg_control;
 	enum usb_mode_type default_mode;
 	enum msm_usb_phy_type phy_type;
-    enum usb_otg_chargerIC chargerIC;
 	int pmic_id_irq;
 	unsigned int mpm_otgsessvld_int;
 	unsigned int mpm_dpshv_int;
@@ -277,6 +271,7 @@ struct msm_otg_platform_data {
 	bool enable_lpm_on_dev_suspend;
 	bool core_clk_always_on_workaround;
 	bool delay_lpm_on_disconnect;
+	bool delay_lpm_hndshk_on_disconnect;
 	bool dp_manual_pullup;
 	bool enable_sec_phy;
 	struct msm_bus_scale_pdata *bus_scale_table;
@@ -339,7 +334,7 @@ struct msm_otg_platform_data {
 #define B_TST_SRP	8
 #define B_TST_CONFIG	9
 
-#define USB_NUM_BUS_CLOCKS      3
+#define USB_NUM_BUS_CLOCKS	3
 
 /**
  * struct msm_otg: OTG driver data. Shared by HCD and DCD.

@@ -74,8 +74,6 @@
 
 #define USB_SUSPEND_DELAY_TIME	(500 * HZ/1000) /* 500 msec */
 
-#define USB_DEFAULT_SYSTEM_CLOCK 80000000	/* 80 MHz */
-
 enum msm_otg_phy_reg_mode {
 	USB_PHY_REG_OFF,
 	USB_PHY_REG_ON,
@@ -129,74 +127,17 @@ static inline bool aca_enabled(void)
 }
 
 #ifdef CONFIG_HUAWEI_KERNEL
-static int usb_otg_gpio;
-#endif
-
-#ifdef CONFIG_HUAWEI_KERNEL
 extern int get_android_usb_none_mode(void);
 #endif
 #ifdef CONFIG_HUAWEI_KERNEL
 extern int is_usb_chg_exist(void);
 extern void notify_bq24152_to_control_otg(bool enable);
-extern void notify_max77819_to_control_otg(bool enable);
-#endif
-#ifdef CONFIG_HUAWEI_USB_DSM
-#include <linux/usb/dsm_usb.h>
-struct dsm_dev dsm_usb = {
-	.name = "dsm_usb",
-	.fops = NULL,
-	.buff_size = USB_DSM_BUFFER_SIZE,
-};
-struct dsm_client *usb_dclient = NULL;
-/*the buffer which transffering to device radar*/
-struct usb_dsm_log g_usb_dsm_log;
-
-EXPORT_SYMBOL(usb_dclient);
-
-/*
- * Put error message and subsystem specific information into buffer.
- * Now just the error message put into buffer, for expantable, add the input argument sub_sys_type and p_sub
- * @sub_sys_type: usb subsystem
- * @p_sub: the point to specifi subsystem
- * @err_num: error number
- * @err_msg: error message
- * @return: now always return 1:
- */
-int dsm_usb_get_log(int sub_sys_type, void *p_sub, int err_num, char *err_msg)
-{
-	int buff_size = sizeof(g_usb_dsm_log.usb_dsm_log);
-	char *dsm_log_buff = g_usb_dsm_log.usb_dsm_log;
-	/* according to the sub_sys_type: DSM_USB_SUBSYSTEM
-	  * convert the input argumnet p_sub to specifi data type
-	  * struct msm_otg *motg;				USB_PHY
-	  * struct usb_interface *usb_interface;	USB_HOST
-	  * struct usb_gadget *usb_gadget;		USB_DEVICE
-	  * For example:
-	  * if(sub_sys == USB_PHY)	motg = p_sub;
-	  */
-
-	/*clear global buffer*/
-	memset(g_usb_dsm_log.usb_dsm_log,0,buff_size);
-
-	snprintf(dsm_log_buff,buff_size,"Err num: %d, %s\n", err_num, err_msg);
-	pr_info("Err num: %d, %s\n",err_num, err_msg);
-
-	/* based the sub system type, USB_PHY/USB_HOST/USB_DEVICE, write specific information to g_usb_dsm_log.usb_dsm_log
-	  */
-	return 1;
-}
-EXPORT_SYMBOL(dsm_usb_get_log);
-#endif
-
-#ifdef CONFIG_HUAWEI_DSM
-#include <linux/dsm_pub.h>
-extern struct dsm_client *charger_dclient;
 #endif
 
 static int vdd_val[VDD_VAL_MAX];
-static u32 bus_freqs[USB_NUM_BUS_CLOCKS];	/* bimc, snoc, pcnoc clk */;
-static char bus_clkname[USB_NUM_BUS_CLOCKS][20] = {"bimc_clk", "snoc_clk",
-						"pcnoc_clk"};
+
+static u32 bus_freqs[USB_NUM_BUS_CLOCKS];	/* bimc, snoc, pcnoc clk */
+static char bus_clkname[USB_NUM_BUS_CLOCKS][20] = {"bimc_clk", "snoc_clk", "pcnoc_clk"};
 static bool bus_clk_rate_set;
 
 static int msm_hsusb_ldo_init(struct msm_otg *motg, int init)
@@ -729,10 +670,7 @@ static enum hrtimer_restart msm_otg_timer_func(struct hrtimer *hrtimer)
 	switch (motg->active_tmout) {
 	case A_WAIT_VRISE:
 		/* TODO: use vbus_vld interrupt */
-        if(test_bit(B_SESS_VLD, &motg->inputs))
-        {
-            set_bit(A_VBUS_VLD, &motg->inputs);
-        }
+		set_bit(A_VBUS_VLD, &motg->inputs);
 		break;
 	case A_TST_MAINT:
 		/* OTG PET: End session after TA_TST_MAINT */
@@ -1059,15 +997,9 @@ phcd_retry:
 	if (atomic_read(&motg->in_lpm))
 		return 0;
 
-	/*
-	 * Don't allow low power mode if bam pipes are still connected.
-	 * Otherwise it could lead to unclocked access when sps driver
-	 * accesses USB bam registers as part of disconnecting bam pipes.
-	 */
-	if (!msm_bam_usb_lpm_ok(CI_CTRL)) {
-		pm_schedule_suspend(phy->dev, 1000);
+	if (motg->pdata->delay_lpm_hndshk_on_disconnect &&
+			!msm_bam_usb_lpm_ok(CI_CTRL))
 		return -EBUSY;
-	}
 
 	motg->ui_enabled = 0;
 	disable_irq(motg->irq);
@@ -1342,7 +1274,8 @@ static int msm_otg_resume(struct msm_otg *motg)
 	if (!atomic_read(&motg->in_lpm))
 		return 0;
 
-	msm_bam_notify_lpm_resume(CI_CTRL);
+	if (motg->pdata->delay_lpm_hndshk_on_disconnect)
+		msm_bam_notify_lpm_resume(CI_CTRL);
 
 	if (motg->ui_enabled) {
 		motg->ui_enabled = 0;
@@ -1543,28 +1476,13 @@ static void msm_otg_notify_host_mode(struct msm_otg *motg, bool host_mode)
 static int msm_otg_notify_chg_type(struct msm_otg *motg)
 {
 	static int charger_type;
-#ifdef CONFIG_HUAWEI_KERNEL
-	static int chg_type = -1;
-#endif
 
 	/*
 	 * TODO
 	 * Unify OTG driver charger types and power supply charger types
 	 */
-	/* should use the same type to compare */
-#ifdef CONFIG_HUAWEI_KERNEL
-	if (chg_type == motg->chg_type)
-	{
-		return 0;
-	}
-	else
-	{
-		chg_type = motg->chg_type;
-	}
-#else
 	if (charger_type == motg->chg_type)
 		return 0;
-#endif
 
 	if (motg->chg_type == USB_SDP_CHARGER)
 		charger_type = POWER_SUPPLY_TYPE_USB;
@@ -1605,7 +1523,7 @@ static int msm_otg_notify_power_supply(struct msm_otg *motg, unsigned mA)
 			goto psy_error;
 		if (power_supply_set_current_limit(psy, 1000*mA))
 			goto psy_error;
-	} else if (motg->cur_power >= 0 && (mA == 0 || mA == 2)) {
+	} else if (motg->cur_power > 0 && (mA == 0 || mA == 2)) {
 		/* Disable charging */
 		if (power_supply_set_online(psy, false))
 			goto psy_error;
@@ -1816,14 +1734,12 @@ static void msm_hsusb_vbus_power(struct msm_otg *motg, bool on)
 			vbus_is_on = on;
 		return;
 	}
-
 #ifndef CONFIG_HUAWEI_KERNEL
 	if (!vbus_otg) {
 		pr_err("vbus_otg is NULL.");
 		return;
 	}
 #endif
-
 	/*
 	 * if entering host mode tell the charger to not draw any current
 	 * from usb before turning on the boost.
@@ -1839,16 +1755,7 @@ static void msm_hsusb_vbus_power(struct msm_otg *motg, bool on)
 			return;
 		}
 #else
-    if(motg->pdata->chargerIC == OTG_CHGIC_BQ24152)
-    {
-        notify_bq24152_to_control_otg(true);
-    }
-    else
-    {
-        notify_max77819_to_control_otg(true);
-
-	  gpio_set_value(usb_otg_gpio, 1);
-    }
+		notify_bq24152_to_control_otg(true);
 #endif
 		vbus_is_on = true;
 	} else {
@@ -1859,16 +1766,7 @@ static void msm_hsusb_vbus_power(struct msm_otg *motg, bool on)
 			return;
 		}
 #else
-    if(motg->pdata->chargerIC == OTG_CHGIC_BQ24152)
-    {
-        notify_bq24152_to_control_otg(false);
-    }
-    else
-    {
-		//notify_bq24152_to_control_otg(false);
-		notify_max77819_to_control_otg(false);
-	    gpio_set_value(usb_otg_gpio, 0);
-    }
+		notify_bq24152_to_control_otg(false);
 #endif
 		msm_otg_notify_host_mode(motg, on);
 		vbus_is_on = false;
@@ -1888,7 +1786,6 @@ static int msm_otg_set_host(struct usb_otg *otg, struct usb_bus *host)
 		dev_info(otg->phy->dev, "Host mode is not supported\n");
 		return -ENODEV;
 	}
-
 #ifndef CONFIG_HUAWEI_KERNEL
 	if (!motg->pdata->vbus_power && host) {
 		vbus_otg = devm_regulator_get(motg->phy.dev, "vbus_otg");
@@ -1898,7 +1795,6 @@ static int msm_otg_set_host(struct usb_otg *otg, struct usb_bus *host)
 		}
 	}
 #endif
-
 	if (!host) {
 		if (otg->phy->state == OTG_STATE_A_HOST) {
 			pm_runtime_get_sync(otg->phy->dev);
@@ -2678,17 +2574,8 @@ static void msm_chg_detect_work(struct work_struct *w)
 		if (is_dcd || tmout) {
 			if (is_dcd)
 				dcd = true;
-//#ifndef CONFIG_HUAWEI_USB_DSM           //delete usb radar 21302
-#if 1
 			else
 				dcd = false;
-#else
-			else{
-				dcd = false;
-				DSM_USB_LOG(DSM_USB_PHY, NULL, DSM_USB_PHY_DCD_ERR,
-							"%s: usb recognize to charger by error\n", __FUNCTION__);
-			}
-#endif
 			msm_chg_disable_dcd(motg);
 			msm_chg_enable_primary_det(motg);
 			delay = MSM_CHG_PRIMARY_DET_TIME;
@@ -2762,11 +2649,6 @@ static void msm_chg_detect_work(struct work_struct *w)
 		if (aca_enabled())
 			udelay(100);
 		msm_chg_enable_aca_intr(motg);
-
-		/* Enable VDP_SRC in case of DCP charger */
-		if (motg->chg_type == USB_DCP_CHARGER)
-			ulpi_write(phy, 0x2, 0x85);
-
 		dev_info(phy->dev, "chg_type = %s\n",
 			chg_to_string(motg->chg_type));
 		queue_work(system_nrt_wq, &motg->sm_work);
@@ -2866,11 +2748,9 @@ static void msm_otg_init_sm(struct msm_otg *motg)
 			if (!ret) {
 				dev_dbg(motg->phy.dev, "%s: timeout waiting for PMIC VBUS\n",
 					__func__);
-#ifdef CONFIG_HUAWEI_USB_DSM
-				DSM_USB_LOG(DSM_USB_PHY, NULL, DSM_USB_PHY_PMICVBUS_ERR,
-							"%s: timeout waiting for PMIC VBUS\n", __FUNCTION__);
+#ifdef CONFIG_HUAWEI_USB
+                printk("%s: timeout waiting for PMIC VBUS\n",__func__);
 #endif
-
 				clear_bit(B_SESS_VLD, &motg->inputs);
 				pmic_vbus_init.done = 1;
 			}
@@ -2975,6 +2855,8 @@ static void msm_otg_sm_work(struct work_struct *w)
 			case USB_CHG_STATE_DETECTED:
 				switch (motg->chg_type) {
 				case USB_DCP_CHARGER:
+					/* Enable VDP_SRC */
+					ulpi_write(otg->phy, 0x2, 0x85);
 					if (motg->ext_chg_opened) {
 						init_completion(
 							&motg->ext_chg_wait);
@@ -2991,13 +2873,6 @@ static void msm_otg_sm_work(struct work_struct *w)
 					msm_otg_notify_charger(motg,
 							IDEV_CHG_MIN);
 					pr_info("none standard charger deteted\n");
-#ifdef CONFIG_HUAWEI_DSM
-					/* if none standard charger deteted, record this log, and notify to the dsm server*/
-					if(!dsm_client_ocuppy(charger_dclient)){
-						dsm_client_record(charger_dclient, "none standard charger deteted\n");
-						dsm_client_notify(charger_dclient, DSM_NONSTANDARD_CHARGER_DETETED);
-					}
-#endif
 #else
 					msm_otg_notify_charger(motg,
 							IDEV_CHG_MAX);
@@ -3325,8 +3200,6 @@ static void msm_otg_sm_work(struct work_struct *w)
 			mod_timer(&motg->id_timer, ID_TIMER_FREQ);
 			if (msm_chg_check_aca_intr(motg))
 				work = 1;
-        } else if(!test_bit(A_VBUS_VLD, &motg->inputs)) {
-            msm_otg_start_timer(motg, 1000, A_WAIT_VRISE);
 		}
 		break;
 	case OTG_STATE_A_WAIT_BCON:
@@ -3749,17 +3622,11 @@ static void msm_otg_set_vbus_state(int online)
 
 	if (!init) {
 		init = true;
-		if (pmic_vbus_init.done &&
-				test_bit(B_SESS_VLD, &motg->inputs)) {
-			pr_debug("PMIC: BSV came late\n");
-			goto out;
-		}
 		complete(&pmic_vbus_init);
 		pr_info("PMIC: BSV init complete\n");
 		return;
 	}
 
-out:
 	if (test_bit(MHL, &motg->inputs) ||
 			mhl_det_in_progress) {
 		pr_debug("PMIC: BSV interrupt ignored in MHL\n");
@@ -4172,51 +4039,6 @@ static int otg_power_set_property_usb(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_TYPE:
 		psy->type = val->intval;
-
-		/*
-		 * If charger detection is done by the USB driver,
-		 * motg->chg_type is already assigned in the
-		 * charger detection work.
-		 *
-		 * There is a possibility of overriding the
-		 * actual charger type with power supply type
-		 * charger. For example USB PROPRIETARY charger
-		 * does not exist in power supply enum and it
-		 * gets overridden as DCP.
-		 */
-		if (motg->chg_state == USB_CHG_STATE_DETECTED)
-			break;
-
-		switch (psy->type) {
-		case POWER_SUPPLY_TYPE_USB:
-			motg->chg_type = USB_SDP_CHARGER;
-			break;
-		case POWER_SUPPLY_TYPE_USB_DCP:
-#ifdef CONFIG_HUAWEI_KERNEL
-			if(USB_FLOATED_CHARGER != motg->chg_type)
-			{
-				motg->chg_type = USB_DCP_CHARGER;
-			}
-#else
-			motg->chg_type = USB_DCP_CHARGER;
-#endif
-			break;
-		case POWER_SUPPLY_TYPE_USB_CDP:
-			motg->chg_type = USB_CDP_CHARGER;
-			break;
-		case POWER_SUPPLY_TYPE_USB_ACA:
-			motg->chg_type = USB_PROPRIETARY_CHARGER;
-			break;
-		default:
-			motg->chg_type = USB_INVALID_CHARGER;
-			break;
-		}
-
-		if (motg->chg_type != USB_INVALID_CHARGER)
-			motg->chg_state = USB_CHG_STATE_DETECTED;
-
-		dev_dbg(motg->phy.dev, "%s: charger type = %s\n", __func__,
-			chg_to_string(motg->chg_type));
 		break;
 	case POWER_SUPPLY_PROP_HEALTH:
 		motg->usbin_health = val->intval;
@@ -4248,9 +4070,6 @@ static int otg_power_property_is_writeable_usb(struct power_supply *psy,
 
 static char *otg_pm_power_supplied_to[] = {
 	"battery",
-#ifdef CONFIG_HUAWEI_KERNEL
-	"max77819-charger",
-#endif
 };
 
 static enum power_supply_property otg_pm_power_props_usb[] = {
@@ -4734,8 +4553,6 @@ struct msm_otg_platform_data *msm_otg_dt_to_pdata(struct platform_device *pdev)
 				&pdata->default_mode);
 	of_property_read_u32(node, "qcom,hsusb-otg-phy-type",
 				&pdata->phy_type);
-    of_property_read_u32(node, "qcom,usbotg-chargeic-bq24152",
-				&pdata->chargerIC);
 	pdata->disable_reset_on_disconnect = of_property_read_bool(node,
 				"qcom,hsusb-otg-disable-reset");
 	pdata->pnoc_errata_fix = of_property_read_bool(node,
@@ -4746,6 +4563,8 @@ struct msm_otg_platform_data *msm_otg_dt_to_pdata(struct platform_device *pdev)
 				"qcom,hsusb-otg-clk-always-on-workaround");
 	pdata->delay_lpm_on_disconnect = of_property_read_bool(node,
 				"qcom,hsusb-otg-delay-lpm");
+	pdata->delay_lpm_hndshk_on_disconnect = of_property_read_bool(node,
+				"qcom,hsusb-otg-delay-lpm-hndshk-on-disconnect");
 	pdata->dp_manual_pullup = of_property_read_bool(node,
 				"qcom,dp-manual-pullup");
 	pdata->enable_sec_phy = of_property_read_bool(node,
@@ -4764,14 +4583,6 @@ struct msm_otg_platform_data *msm_otg_dt_to_pdata(struct platform_device *pdev)
 	pdata->usb_id_gpio = of_get_named_gpio(node, "qcom,usbid-gpio", 0);
 	if (pdata->usb_id_gpio < 0)
 		pr_debug("usb_id_gpio is not available\n");
-	
-#ifdef CONFIG_HUAWEI_KERNEL
-	usb_otg_gpio = of_get_named_gpio(node, "qcom,usbotg-enable", 0);
-	if (usb_otg_gpio < 0)
-	{
-	    pr_debug("usb_otg_gpio is not available\n");
-	}
-#endif
 
 	pdata->l1_supported = of_property_read_bool(node,
 				"qcom,hsusb-l1-supported");
@@ -4832,8 +4643,7 @@ static int msm_otg_probe(struct platform_device *pdev)
 	 * Get Max supported clk frequency for USB Core CLK and request
 	 * to set the same.
 	 */
-	motg->core_clk_rate = clk_round_rate(motg->core_clk,
-		USB_DEFAULT_SYSTEM_CLOCK);
+	motg->core_clk_rate = clk_round_rate(motg->core_clk, LONG_MAX);
 	if (IS_ERR_VALUE(motg->core_clk_rate)) {
 		dev_err(&pdev->dev, "fail to get core clk max freq.\n");
 	} else {
@@ -5209,22 +5019,6 @@ static int msm_otg_probe(struct platform_device *pdev)
 		}
 	}
 
-#ifdef CONFIG_HUAWEI_KERNEL
-        if (gpio_is_valid(usb_otg_gpio)) 
-        {
-            /* usb_otg_gpio request */
-			ret = gpio_request(usb_otg_gpio, "USB_OTG_GPIO");
-			if (ret < 0) 
-			{
-			    dev_err(&pdev->dev, "gpio req failed for id\n");
-				usb_otg_gpio = 0;
-				goto remove_phy;
-			}
-		}
-
-		gpio_direction_output(usb_otg_gpio, 0);
-#endif
-
 	msm_hsusb_mhl_switch_enable(motg, 1);
 
 	platform_set_drvdata(pdev, motg);
@@ -5307,12 +5101,7 @@ static int msm_otg_probe(struct platform_device *pdev)
 
 	motg->pm_notify.notifier_call = msm_otg_pm_notify;
 	register_pm_notifier(&motg->pm_notify);
-#ifdef CONFIG_HUAWEI_USB_DSM
-	if (!usb_dclient) {
-		usb_dclient = dsm_register_client(&dsm_usb);
-	}
-	spin_lock_init(&g_usb_dsm_log.lock);
-#endif
+
 	return 0;
 
 remove_cdev:

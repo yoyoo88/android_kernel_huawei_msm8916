@@ -141,8 +141,6 @@ struct ffs_data {
 	struct usb_request		*ep0req;		/* P: mutex */
 	struct completion		ep0req_completion;	/* P: mutex */
 	int				ep0req_status;		/* P: mutex */
-	struct completion		epin_completion;
-	struct completion		epout_completion;
 
 	/* reference counter */
 	atomic_t			ref;
@@ -751,32 +749,43 @@ static const struct file_operations ffs_ep0_operations = {
 
 static void ffs_epfile_io_complete(struct usb_ep *_ep, struct usb_request *req)
 {
-	struct ffs_ep *ep = _ep->driver_data;
 	ENTER();
-
-	/* req may be freed during unbind */
-	if (ep && ep->req && likely(req->context)) {
+	if (likely(req->context)) {
 		struct ffs_ep *ep = _ep->driver_data;
 		ep->status = req->status ? req->status : req->actual;
 		complete(req->context);
 	}
 }
 
+#ifdef CONFIG_HUAWEI_USB
+#define WRITE_TIME	120
+#endif
 static ssize_t ffs_epfile_io(struct file *file,
 			     char __user *buf, size_t len, int read)
 {
 	struct ffs_epfile *epfile = file->private_data;
 	struct ffs_ep *ep;
-	struct ffs_data *ffs = epfile->ffs;
 	char *data = NULL;
 	ssize_t ret;
 	int halt;
 	int buffer_len = 0;
+#ifdef CONFIG_HUAWEI_USB
+	int err = 0;
 
+	long time_size;
+	if(!read){
+		time_size = WRITE_TIME*HZ;
+	}
+	else{
+		time_size = MAX_SCHEDULE_TIMEOUT;
+	}
+#endif
 	pr_debug("%s: len %zu, read %d\n", __func__, len, read);
 
-	if (atomic_read(&epfile->error))
+	if (atomic_read(&epfile->error)) {
+		pr_err("%s error is set before queuing, read:%d\n", __func__, read);
 		return -ENODEV;
+	}
 
 	goto first_try;
 	do {
@@ -869,59 +878,71 @@ first_try:
 		ret = -EBADMSG;
 	} else {
 		/* Fire the request */
-		struct completion *done;
+		DECLARE_COMPLETION_ONSTACK(done);
 
 		struct usb_request *req = ep->req;
+		req->context  = &done;
 		req->complete = ffs_epfile_io_complete;
 		req->buf      = data;
 		req->length   = buffer_len;
 
-		if (read) {
-			INIT_COMPLETION(ffs->epout_completion);
-			req->context  = done = &ffs->epout_completion;
-		} else {
-			INIT_COMPLETION(ffs->epin_completion);
-			req->context  = done = &ffs->epin_completion;
-		}
 		ret = usb_ep_queue(ep->ep, req, GFP_ATOMIC);
 
 		spin_unlock_irq(&epfile->ffs->eps_lock);
 
 		if (unlikely(ret < 0)) {
 			ret = -EIO;
-		} else if (unlikely(wait_for_completion_interruptible(done))) {
+		/* reolace wait_for_completion_interruptible with wait_for_completion_interruptible_timeout
+		  * wait_for_completion_interruptible_timeout return 0 meaning timeoout
+		  * return -1 meaning be interrupted, retrun > 0 meaning completion: normal thing
+		  * write operation maybe be timeout, read operation will not be timeout
+		  */
+#ifdef CONFIG_HUAWEI_USB
+		} else if((err = wait_for_completion_interruptible_timeout(&done, time_size)) <= 0){
 			spin_lock_irq(&epfile->ffs->eps_lock);
-			/*
-			 * While we were acquiring lock endpoint got disabled
-			 * (disconnect) or changed (composition switch) ?
-			 */
-			if (epfile->ep == ep)
+			if (ep->ep)
+				usb_ep_dequeue(ep->ep, req);
+			spin_unlock_irq(&epfile->ffs->eps_lock);
+
+			if( (!read) && !err) {
+				pr_err("f_fs: %s: wait_for_completion timeout, read:%d,len(%d)\n", __func__, read,len);
+				ret = -ETIMEDOUT;
+			}
+		    else {
+				ret = -EINTR;
+			}
+#else
+		} else if (unlikely(wait_for_completion_interruptible(&done))) {
+			spin_lock_irq(&epfile->ffs->eps_lock);
+			if (ep->ep)
 				usb_ep_dequeue(ep->ep, req);
 			spin_unlock_irq(&epfile->ffs->eps_lock);
 			ret = -EINTR;
+#endif
 		} else {
 			spin_lock_irq(&epfile->ffs->eps_lock);
-			/*
-			 * While we were acquiring lock endpoint got disabled
-			 * (disconnect) or changed (composition switch) ?
-			 */
-			if (epfile->ep == ep)
+			if (ep->ep)
 				ret = ep->status;
 			else
 				ret = -ENODEV;
 			spin_unlock_irq(&epfile->ffs->eps_lock);
 			if (read && ret > 0) {
-				if (ret > len)
+				if (ret > len) {
+					pr_err("%s: !!overflow, read:%d\n, ret (%d) len(%d)", __func__, read, ret, len);
 					ret = -EOVERFLOW;
-				else if (unlikely(copy_to_user(buf, data, ret)))
+				} else if (unlikely(copy_to_user(buf, data, ret))) {
 					ret = -EFAULT;
+				}
 			}
 		}
 	}
 
 	mutex_unlock(&epfile->mutex);
 error:
-	kfree(data);
+	kfree(data);    
+	if (ret < 0)
+		pr_info("return(%d) %dn buff_len:%d\n", ret, len,buffer_len);
+
 	return ret;
 }
 
@@ -995,6 +1016,7 @@ static long ffs_epfile_ioctl(struct file *file, unsigned code,
 			ret = 0;
 			break;
 		case FUNCTIONFS_CLEAR_HALT:
+			pr_err("%s, adbd issues CLEAR_HALT\n", __func__);
 			ret = usb_ep_clear_halt(epfile->ep->ep);
 			break;
 		case FUNCTIONFS_ENDPOINT_REVMAP:
@@ -1381,8 +1403,6 @@ static struct ffs_data *ffs_data_new(void)
 	spin_lock_init(&ffs->eps_lock);
 	init_waitqueue_head(&ffs->ev.waitq);
 	init_completion(&ffs->ep0req_completion);
-	init_completion(&ffs->epout_completion);
-	init_completion(&ffs->epin_completion);
 
 	/* XXX REVISIT need to update it in some places, or do we? */
 	ffs->ev.can_stall = 1;
@@ -1463,13 +1483,11 @@ static int functionfs_bind(struct ffs_data *ffs, struct usb_composite_dev *cdev)
 	ffs->ep0req->context = ffs;
 
 	lang = ffs->stringtabs;
-	if (lang) {
-		for (; *lang; ++lang) {
-			struct usb_string *str = (*lang)->strings;
-			int id = ffs->first_id;
-			for (; str->s; ++id, ++str)
-				str->id = id;
-		}
+	for (lang = ffs->stringtabs; *lang; ++lang) {
+		struct usb_string *str = (*lang)->strings;
+		int id = ffs->first_id;
+		for (; str->s; ++id, ++str)
+			str->id = id;
 	}
 
 	ffs->gadget = cdev->gadget;
@@ -1589,7 +1607,6 @@ static void ffs_func_free(struct ffs_function *func)
 		if (ep->ep && ep->req)
 			usb_ep_free_request(ep->ep, ep->req);
 		ep->req = NULL;
-		ep->ep = NULL;
 		++ep;
 	} while (--count);
 	spin_unlock_irqrestore(&func->ffs->eps_lock, flags);
